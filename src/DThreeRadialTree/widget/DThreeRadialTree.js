@@ -151,12 +151,13 @@ define([
             var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
             var link = g.selectAll(".link")
+                .remove().exit()
                 .data(root.links())
                 .enter().append("path")
                 .attr("class", "link")
                 .attr("d", d3.linkRadial()
-                    .angle(function(d) { return d.x; })
-                    .radius(function(d) { return d.y; }));
+                .angle(function(d) { return d.x; })
+                .radius(function(d) { return d.y; }));
 
             var node = g.selectAll(".node")
                 .data(root.descendants())
