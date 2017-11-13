@@ -17,13 +17,12 @@ define([
     //"DThreeRadialTree/"
 
     "dojo/text!DThreeRadialTree/widget/template/DThreeRadialTree.html"
-], function (declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, widgetTemplate) {
+], function(declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, widgetTemplate) {
     "use strict";
 
-    return declare("DThreeRadialTree.widget.DThreeRadialTree", [ _WidgetBase, _TemplatedMixin ], {
+    return declare("DThreeRadialTree.widget.DThreeRadialTree", [_WidgetBase, _TemplatedMixin], {
 
         templateString: widgetTemplate,
-
 
         widgetBase: null,
 
@@ -31,30 +30,54 @@ define([
         _handles: null,
         _contextObj: null,
 
-        constructor: function () {
+        //dummy 
+        __jsonTestData: [{
+                "email": "andreas.schultz@company.com",
+                "fullName": "Andreas Schultz",
+                "isCEO": true,
+                "manager": "company.com",
+                "icon": "ok"
+            },
+            {
+                "email": "albert.li@company.com",
+                "fullName": "Albert Li",
+                "isCEO": false,
+                "manager": "andreas.schultz@company.com",
+                "icon": "ok"
+            },
+            {
+                "email": "amy.jones@company.com",
+                "fullName": "Amy Jones",
+                "isCEO": false,
+                "manager": "andreas.schultz@company.com",
+                "icon": "ok"
+            }
+        ],
+
+        constructor: function() {
             this._handles = [];
         },
 
-        postCreate: function () {
+        postCreate: function() {
             logger.debug(this.id + ".postCreate");
         },
 
-        update: function (obj, callback) {
+        update: function(obj, callback) {
             logger.debug(this.id + ".update");
 
             this._contextObj = obj;
             this._updateRendering(callback);
         },
 
-        resize: function (box) {
-          logger.debug(this.id + ".resize");
+        resize: function(box) {
+            logger.debug(this.id + ".resize");
         },
 
-        uninitialize: function () {
-          logger.debug(this.id + ".uninitialize");
+        uninitialize: function() {
+            logger.debug(this.id + ".uninitialize");
         },
 
-        _updateRendering: function (callback) {
+        _updateRendering: function(callback) {
             logger.debug(this.id + "._updateRendering");
 
             if (this._contextObj !== null) {
@@ -66,10 +89,10 @@ define([
             this._executeCallback(callback);
         },
 
-        _executeCallback: function (cb) {
-          if (cb && typeof cb === "function") {
-            cb();
-          }
+        _executeCallback: function(cb) {
+            if (cb && typeof cb === "function") {
+                cb();
+            }
         }
     });
 });
