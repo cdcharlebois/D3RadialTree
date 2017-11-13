@@ -318,7 +318,8 @@ define([
                     // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": "ok",
-                    "orgLayer": mxobj.get(this.orgLayerRankAttr)
+                    "orgLayer": mxobj.get(this.orgLayerRankAttr),
+                    "guid": mxobj.getGuid()
                 }
             }));
             // }));
