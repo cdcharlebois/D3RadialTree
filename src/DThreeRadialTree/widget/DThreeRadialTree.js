@@ -26,6 +26,15 @@ define([
 
         widgetBase: null,
 
+        // modeler variables.
+        dataEntity: null,
+        ctxEntity: null,
+        primaryKeyAttr: null,
+        foreignKeyAttr: null,
+        enumAttr: null,
+        enumImageMapping: null,
+        editForm: null,
+
         // Internal variables.
         _handles: null,
         _contextObj: null,
@@ -70,10 +79,14 @@ define([
 
         update: function(obj, callback) {
             logger.debug(this.id + ".update");
-
             this._contextObj = obj;
-            this._updateRendering(callback);
-            this.__drawGraph(this.__jsonTestData);
+            this._gatherData()
+                .then(lang.hitch(this, function(data) {
+                    this.__drawGraph(data);
+                    this._updateRendering(callback);
+                }));
+
+            // this.__drawGraph(this.__jsonTestData);
 
         },
 
@@ -211,13 +224,144 @@ define([
         },
 
         /**
-         * Gather Data
+         * Gather Data (ASYNC)
          * ---
          * Gathers the needed data to render the tree.
          * @return {Promise} - Resolve with an array of JSON objects containing the data for the hierarchy
          */
         _gatherData: function() {
+            return new Promise(lang.hitch(this, function(resolve, reject) {
+                // 1. Fetch the entities to be used as the nodes
+                this._fetchEntities()
+                    .then(lang.hitch(this, function(mxObjects) {
+                        var includedNodes = this._cleanUpData(mxObjects),
+                            chartObjs = this._mapToChartObjects(includedNodes);
+                        resolve(chartObjs)
+                    }))
+            }));
+        },
 
+        _cleanUpData: function(mxObjects) {
+            // return new Promise(lang.hitch(this, function(resolve) {
+            this._setCEOAsRoot(mxObjects);
+            var sortedMxObjects = this._sortMxObjects(mxObjects, "OrgLayer"),
+                include = this._getValidMxObjects(sortedMxObjects);
+            return (include);
+            // }));
+        },
+
+        /**
+         * Fetch Entities
+         * ---
+         * @returns {Promise} - Resolves with a list of MxObjects
+         */
+        _fetchEntities: function() {
+            return new Promise(lang.hitch(this, function(resolve, reject) {
+                var entity = this.dataEntity,
+                    assn = this.ctxEntity.split("/")[0];
+                mx.data.get({
+                    xpath: "//" + entity + "[" + assn + "=" + this._contextObj.getGuid() + "]",
+                    callback: function(res) {
+                        resolve(res);
+                    },
+                    error: function(err) {
+                        reject(err);
+                    }
+                });
+            }));
+        },
+
+        /**
+         * Map to Chart Objects
+         * ---
+         * @returns {Array: Objects} - the objects for the D3 Tree
+         */
+        _mapToChartObjects: function(mxObjects) {
+            // return new Promise(lang.hitch(this, function(resolve, reject) {
+            // 3. map to chart objects
+            return mxObjects.map(lang.hitch(this, function(mxobj) {
+                return {
+                    "email": mxobj.get(this.primaryKeyAttr),
+                    "fullName": mxobj.get("FullName"),
+                    // "isCEO": false,
+                    "manager": mxobj.get(this.foreignKeyAttr),
+                    "icon": "ok",
+                    "orgLayer": mxobj.get("OrgLayer")
+                }
+            }));
+            // }));
+        },
+
+        /**
+         * Get Valid Mx Objects
+         * ---
+         * Checks to see if `OrgLayer`, `Orphan` are set
+         * Checks to see if the new object is a duplicate
+         * @param {Array} mxObjects - list of mxobjects, sorted by ascending org layer.
+         * @returns {Array : MxObject} - list of mxObjects to include in the tree.
+         */
+        _getValidMxObjects: function(mxObjects) {
+            // 2b. Check only include nodes with parents
+            var include = [];
+            mxObjects.forEach(lang.hitch(this, function(mxObj) {
+                // is `mxObj` valid?
+                if (!mxObj.get("OrgLayer") || mxObj.get("Orphan") || this._isDuplicate(mxObj, include)) return;
+                // does the parent of `mxObj` exist?
+                var parent = include.find(lang.hitch(this, function(parentObj) {
+                    return (parentObj.get("OrgLayer") * 1 === mxObj.get("OrgLayer") * 1 - 1) &&
+                        parentObj.get(this.primaryKeyAttr) === mxObj.get(this.foreignKeyAttr)
+                }))
+                if (parent || mxObj.get("OrgLayer") * 1 === 0) {
+                    include.push(mxObj);
+                }
+            }));
+            return include;
+        },
+
+        /**
+         * Sort MxObjects
+         * ---
+         * @param {Array::MxObjects} mxObjects - The Obejcts to sort
+         * @param {String} field - the name of the field on which to sort
+         */
+        _sortMxObjects: function(mxObjects, field) {
+            // 2a. sort in ascending org layer order
+            return mxObjects.sort(function(a, b) {
+                if (a.get(field) < b.get(field)) {
+                    return -1
+                } else if (a.get(field) > b.get(field)) {
+                    return 1
+                } else {
+                    return 0;
+                }
+            });
+        },
+
+        /**
+         * Set CEO as Root
+         * ---
+         * @param {Array::MxObject} mxObjects - Array of Objects, with one CEO to set as root.
+         * @todo Error Handling - if more than one CEO
+         */
+        _setCEOAsRoot: function(mxObjects) {
+            // 1. Set the CEO to not have a manager
+            var ceo = mxObjects.find(lang.hitch(this, function(mxobj) {
+                return mxobj.get("CEO")
+            }));
+            ceo.set(this.foreignKeyAttr, "");
+        },
+
+        /**
+         * Check to see if this Node exists already
+         * @param {MxObject} mxObj - the mxobj to check for
+         * @param {Array::MxObject} includedObjs - the list to check int
+         * @return {Boolean} - if the node would be a duplicate
+         */
+        _isDuplicate: function(mxObj, includedObjs) {
+            var existing = includedObjs.find(lang.hitch(this, function(obj) {
+                return obj.get(this.primaryKeyAttr) === mxObj.get(this.primaryKeyAttr)
+            }))
+            return !!existing;
         },
 
         resize: function(box) {
