@@ -189,6 +189,7 @@ define([
                 })
                 .attr("width", nodeSize)
                 .attr("height", nodeSize)
+                .on('click', nodeInfo)
 
             node.append("text")
                 .attr("dy", "0.31em")
@@ -222,6 +223,13 @@ define([
                     return '#FADF0A';
                 }
             }
+
+            //get data from node
+            function nodeInfo(d){
+                if(d.data !== null){
+                    console.log(d);
+                }
+            }
         },
 
         /**
@@ -233,13 +241,13 @@ define([
         _gatherData: function() {
             return new Promise(lang.hitch(this, function(resolve, reject) {
                 // 1. Fetch the entities to be used as the nodes
-                this._fetchEntities()
+                this._featchEntitiesFromMicroflow()
                     .then(lang.hitch(this, function(mxObjects) {
                         var includedNodes = this._cleanUpData(mxObjects),
                             chartObjs = this._mapToChartObjects(includedNodes);
                         resolve(chartObjs)
                     }))
-            }));
+            })); 
         },
 
         _cleanUpData: function(mxObjects) {
@@ -267,6 +275,26 @@ define([
                     },
                     error: function(err) {
                         reject(err);
+                    }
+                });
+            }));
+        },
+
+        _featchEntitiesFromMicroflow: function(mfName){
+            return new Promise(lang.hitch(this, function(resolve, reject){
+                mx.data.action({
+                    params:{
+                        applyto: "selection",
+                        actionname: this.dataMicroflow,
+                        guids: [this._contextObj.getGuid()]
+                    },
+                    origin: this.mxform,
+                    callback: lang.hitch(this, function(data){
+                        resolve(data);
+                    }),
+                    error: function(error){
+                        console.log(error);
+                        reject(error);
                     }
                 });
             }));
