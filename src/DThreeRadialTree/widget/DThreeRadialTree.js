@@ -14,6 +14,7 @@ define([
     "dojo/text",
     "dojo/html",
     "dojo/_base/event",
+    //"DThreeRadialTree/"
 
     "dojo/text!DThreeRadialTree/widget/template/DThreeRadialTree.html"
 ], function (declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, widgetTemplate) {
