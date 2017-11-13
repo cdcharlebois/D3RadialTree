@@ -34,10 +34,13 @@ define([
         enumAttr: null,
         enumImageMapping: null,
         editForm: null,
+        dataMicroflow: null,
+        orgLayerRankAttr: null,
 
         // Internal variables.
         _handles: null,
         _contextObj: null,
+        _totalErrors: {},
 
         //dummy 
         __jsonTestData: [{
@@ -156,8 +159,8 @@ define([
                 .enter().append("path")
                 .attr("class", "link")
                 .attr("d", d3.linkRadial()
-                .angle(function(d) { return d.x; })
-                .radius(function(d) { return d.y; }));
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
 
             var node = g.selectAll(".node")
                 .data(root.descendants())
@@ -225,8 +228,8 @@ define([
             }
 
             //get data from node
-            function nodeInfo(d){
-                if(d.data !== null){
+            function nodeInfo(d) {
+                if (d.data !== null) {
                     console.log(d);
                 }
             }
@@ -247,13 +250,13 @@ define([
                             chartObjs = this._mapToChartObjects(includedNodes);
                         resolve(chartObjs)
                     }))
-            })); 
+            }));
         },
 
         _cleanUpData: function(mxObjects) {
             // return new Promise(lang.hitch(this, function(resolve) {
             this._setCEOAsRoot(mxObjects);
-            var sortedMxObjects = this._sortMxObjects(mxObjects, "OrgLayer"),
+            var sortedMxObjects = this._sortMxObjects(mxObjects, this.orgLayerRankAttr),
                 include = this._getValidMxObjects(sortedMxObjects);
             return (include);
             // }));
@@ -280,19 +283,19 @@ define([
             }));
         },
 
-        _featchEntitiesFromMicroflow: function(mfName){
-            return new Promise(lang.hitch(this, function(resolve, reject){
+        _featchEntitiesFromMicroflow: function(mfName) {
+            return new Promise(lang.hitch(this, function(resolve, reject) {
                 mx.data.action({
-                    params:{
+                    params: {
                         applyto: "selection",
                         actionname: this.dataMicroflow,
                         guids: [this._contextObj.getGuid()]
                     },
                     origin: this.mxform,
-                    callback: lang.hitch(this, function(data){
+                    callback: lang.hitch(this, function(data) {
                         resolve(data);
                     }),
-                    error: function(error){
+                    error: function(error) {
                         console.log(error);
                         reject(error);
                     }
@@ -315,7 +318,7 @@ define([
                     // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": "ok",
-                    "orgLayer": mxobj.get("OrgLayer")
+                    "orgLayer": mxobj.get(this.orgLayerRankAttr)
                 }
             }));
             // }));
@@ -334,14 +337,25 @@ define([
             var include = [];
             mxObjects.forEach(lang.hitch(this, function(mxObj) {
                 // is `mxObj` valid?
-                if (!mxObj.get("OrgLayer") || mxObj.get("Orphan") || this._isDuplicate(mxObj, include)) return;
+                if (!mxObj.get(this.orgLayerRankAttr) || mxObj.get("Orphan") || this._isDuplicate(mxObj, include)) {
+                    if (!mxObj.get(this.orgLayerRankAttr)) {
+                        this._logExclusionMessage(mxObj, "attribute [Org Layer] is undefined");
+                    } else if (mxObj.get("Orphan")) {
+                        this._logExclusionMessage(mxObj, "attribute [Orphan] is true");
+                    } else {
+                        this._logExclusionMessage(mxObj, "there is already a node with this value for [" + this.primaryKeyAttr + "]");
+                    }
+                    return;
+                }
                 // does the parent of `mxObj` exist?
                 var parent = include.find(lang.hitch(this, function(parentObj) {
-                    return (parentObj.get("OrgLayer") * 1 === mxObj.get("OrgLayer") * 1 - 1) &&
+                    return (parentObj.get(this.orgLayerRankAttr) * 1 === mxObj.get(this.orgLayerRankAttr) * 1 - 1) &&
                         parentObj.get(this.primaryKeyAttr) === mxObj.get(this.foreignKeyAttr)
                 }))
-                if (parent || mxObj.get("OrgLayer") * 1 === 0) {
+                if (parent || mxObj.get(this.orgLayerRankAttr) * 1 === 0) {
                     include.push(mxObj);
+                } else {
+                    this._logExclusionMessage(mxObj, "could not find a parent with [" + this.primaryKeyAttr + "=" + mxObj.get(this.foreignKeyAttr) + "]")
                 }
             }));
             return include;
@@ -393,6 +407,12 @@ define([
             return !!existing;
         },
 
+        _logExclusionMessage: function(mxObj, message) {
+            this._totalErrors[message] = this._totalErrors[message] + 1 || 1;
+            var errorMessage = "Excluding node " + mxObj.get(this.primaryKeyAttr) + " because: " + message;
+            console.debug(errorMessage);
+        },
+
         resize: function(box) {
             logger.debug(this.id + ".resize");
         },
@@ -402,6 +422,13 @@ define([
         },
 
         _updateRendering: function(callback) {
+            console.error("===== EXCLUSION SUMMARY =====");
+            var total = 0;
+            for (var key in this._totalErrors) {
+                console.error("" + this._totalErrors[key] + " total exclusions because --> " + key);
+                total += this._totalErrors[key];
+            }
+            console.error("== Total: " + total + " exclusions ==");
             logger.debug(this.id + "._updateRendering");
 
             if (this._contextObj !== null) {
