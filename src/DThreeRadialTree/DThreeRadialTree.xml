@@ -40,7 +40,7 @@
                 <attributeType name="AutoNumber" />
             </attributeTypes>
         </property>
-        <property key="dataMicroflow" type="microflow" required="true" isPath="no" entityProperty="dataEntity">
+        <property key="dataMicroflow" type="microflow" required="true">
             <caption>Microflow</caption>
             <category>Data Source</category>
             <description>Returns data from microflow</description>
