@@ -1,15 +1,81 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<widget id="DThreeRadialTree.widget.DThreeRadialTree" needsEntityContext="true" xmlns="http://www.mendix.com/widget/1.0/">
+<widget id="DThreeRadialTree.widget.DThreeRadialTree" needsEntityContext="true" 
+    xmlns="http://www.mendix.com/widget/1.0/">
     <name>DThreeRadialTree</name>
     <description>The description of this widget.</description>
-
     <icon />
-
     <properties>
-        <property key="dummyKey" type="string" required="false" defaultValue="">
-            <caption>Dummy key</caption>
+        <!-- ------
+        DATA SOURCE
+        ------- -->
+        <property key="dataEntity" type="entity" required="true" isPath="optional" allowNonPersistableEntities="true" pathType="reference">
+            <caption>Data Entity</caption>
+            <category>Data Source</category>
+            <description>The base entity for the nodes on the tree.</description>
+        </property>
+        <property key="ctxEntity" type="entity" required="true" isPath="yes" allowNonPersistableEntities="true" pathType="reference" entityProperty="dataEntity">
+            <caption>Path to Context</caption>
+            <category>Data Source</category>
+            <description></description>
+        </property>
+        <property key="primaryKeyAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
+            <caption>Primary Key</caption>
+            <category>Data Source</category>
+            <description>The attribute that uniquely identifies a record. (should be email)</description>
+            <attributeTypes>
+                <attributeType name="String" />
+                <attributeType name="Integer" />
+                <attributeType name="Long" />
+                <attributeType name="AutoNumber" />
+            </attributeTypes>
+        </property>
+        <property key="foreignKeyAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
+            <caption>Reference Attr</caption>
+            <category>Data Source</category>
+            <description>The attribute that points this record to its parent.</description>
+            <attributeTypes>
+                <attributeType name="String" />
+                <attributeType name="Integer" />
+                <attributeType name="Long" />
+                <attributeType name="AutoNumber" />
+            </attributeTypes>
+        </property>
+        <!-- -----
+        APPEARANCE
+        ------ -->
+        <property key="enumAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
+            <caption>Image Enum</caption>
             <category>Appearance</category>
-            <description>This key was added to make the widget work in the Modeler (needs atleast 1 key). Please change/remove this one</description>
+            <description>The enumeration (or string) attribute that controls the image to show at each node.</description>
+            <attributeTypes>
+                <attributeType name="Enum" />
+                <attributeType name="String" />
+            </attributeTypes>
+        </property>
+        <property key="enumImageMapping" type="object" required="false" isList="true">
+            <caption>Images</caption>
+            <category>Appearance</category>
+            <description></description>
+            <properties>
+                <property key="enumKey" type="string" required="false" defaultValue="">
+                    <caption>Enum Value</caption>
+                    <category>General</category>
+                    <description>The value of the enumeration</description>
+                </property>
+                <property key="image" type="image">
+                    <caption>Image</caption>
+                    <category>General</category>
+                    <description>The image to display</description>
+                </property>
+            </properties>
+        </property>
+        <!-- ---
+        BEHAVIOR
+        ---- -->
+        <property key="editForm" type="form">
+            <caption>Edit Form</caption>
+            <category>Behavior</category>
+            <description>Form to open on click</description>
         </property>
     </properties>
 </widget>
