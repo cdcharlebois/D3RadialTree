@@ -5,9 +5,9 @@
     <description>The description of this widget.</description>
     <icon />
     <properties>
-        <!-- ------
+        <!-- ======
         DATA SOURCE
-        ------- -->
+        ======= -->
         <property key="dataEntity" type="entity" required="true" isPath="optional" allowNonPersistableEntities="true" pathType="reference">
             <caption>Data Entity</caption>
             <category>Data Source</category>
@@ -40,9 +40,9 @@
                 <attributeType name="AutoNumber" />
             </attributeTypes>
         </property>
-        <!-- -----
+        <!-- =====
         APPEARANCE
-        ------ -->
+        ====== -->
         <property key="enumAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
             <caption>Image Enum</caption>
             <category>Appearance</category>
@@ -69,9 +69,9 @@
                 </property>
             </properties>
         </property>
-        <!-- ---
+        <!-- ===
         BEHAVIOR
-        ---- -->
+        ==== -->
         <property key="editForm" type="form">
             <caption>Edit Form</caption>
             <category>Behavior</category>
