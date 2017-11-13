@@ -14,10 +14,10 @@ define([
     "dojo/text",
     "dojo/html",
     "dojo/_base/event",
-    //"DThreeRadialTree/"
 
-    "dojo/text!DThreeRadialTree/widget/template/DThreeRadialTree.html"
-], function (declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, widgetTemplate) {
+    "dojo/text!DThreeRadialTree/widget/template/DThreeRadialTree.html",
+    "DThreeRadialTree/widget/lib/d3/d3"
+], function (declare, _WidgetBase, _TemplatedMixin, dom, dojoDom, dojoProp, dojoGeometry, dojoClass, dojoStyle, dojoConstruct, dojoArray, lang, dojoText, dojoHtml, dojoEvent, widgetTemplate, d3) {
     "use strict";
 
     return declare("DThreeRadialTree.widget.DThreeRadialTree", [ _WidgetBase, _TemplatedMixin ], {
