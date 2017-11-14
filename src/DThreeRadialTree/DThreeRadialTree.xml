@@ -13,15 +13,10 @@
             <category>Data Source</category>
             <description>The base entity for the nodes on the tree.</description>
         </property>
-        <!-- <property key="ctxEntity" type="entity" required="true" isPath="yes" allowNonPersistableEntities="true" pathType="reference" entityProperty="dataEntity">
-            <caption>Path to Context</caption>
-            <category>Data Source</category>
-            <description></description>
-        </property> -->
         <property key="orgLayerRankAttr" type="attribute" required="true" isPath="optional" pathType="reference" entityProperty="dataEntity">
             <caption>Org Level Attr</caption>
             <category>Data Source</category>
-            <description>Starting at 0 for the CEO, then increasing by 1 for each layer of reports</description>
+            <description>The lowest value is treated as the CEO. If more than one `Data Entity` has the lowest value, then a "phantom" root will be added as their parent.</description>
             <attributeTypes>
                 <attributeType name="Integer" />
             </attributeTypes>
@@ -51,12 +46,41 @@
         <property key="dataMicroflow" type="microflow" required="true">
             <caption>Microflow</caption>
             <category>Data Source</category>
-            <description>Returns data from microflow</description>
+            <description>A microflow that returns a list of `Data Entity` objects to show in the tree.</description>
             <returnType type='Object' entityProperty="dataEntity" isList="true"></returnType>
         </property>        
         <!-- =====
         APPEARANCE
         ====== -->
+        <property key="nodeLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference">
+            <caption>Label Attr</caption>
+            <category>Appearance</category>
+            <description>Which field should we used for the label of the node on the chart?</description>
+            <attributeTypes>
+                <attributeType name="String" />
+            </attributeTypes>
+        </property>
+        <property key="nodeShowLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference">
+            <caption>Show Name Attr</caption>
+            <category>Appearance</category>
+            <description>Should we show the label on the node? (true shows, and false hides), if left empty, we show all names.</description>
+            <attributeTypes>
+                <attributeType name="Boolean" />
+            </attributeTypes>
+        </property>
+        <property key="nodeFocusAttr" type="attribute" required="true" isPath="optional" pathType="reference">
+            <caption>Node Focus Attr</caption>
+            <category>Appearance</category>
+            <description>Boolean attribute that determines if the node should be focused</description>
+            <attributeTypes>
+                <attributeType name="Boolean" />
+            </attributeTypes>
+        </property>
+        <property key="nodeFocusClass" type="string" required="false" defaultValue="">
+            <caption>Node Focus Class</caption>
+            <category>Appearance</category>
+            <description>The Classname to add when a node is focused (based on the `Node Focus Attr` above</description>
+        </property>
         <property key="enumAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
             <caption>Image Enum</caption>
             <category>Appearance</category>
@@ -74,7 +98,7 @@
                 <property key="enumKey" type="string" required="false" defaultValue="">
                     <caption>Enum Value</caption>
                     <category>General</category>
-                    <description>The value of the enumeration</description>
+                    <description>The value of the enumeration. Must match exactly! Capitalization matters</description>
                 </property>
                 <property key="image" type="image">
                     <caption>Image</caption>
@@ -86,7 +110,7 @@
         <property key="nodeSize" type="integer" required="true" defaultValue="0">
             <caption>Node Size</caption>
             <category>Appearance</category>
-            <description>Set size of nodes</description>
+            <description>The diameter of each node, in pixels.</description>
         </property>
       
         <!-- ===

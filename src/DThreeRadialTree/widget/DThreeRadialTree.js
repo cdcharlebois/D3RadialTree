@@ -38,7 +38,10 @@ define([
         enumAttr: null,
         enumImageMapping: null,
         nodeSize: null,
-
+        nodeLabelAttr: null,
+        nodeShowLabelAttr: null,
+        nodeFocusAttr: null,
+        nodeFocusClass: null,
         // behavior
         onClickMicroflow: null,
         editForm: null,
@@ -388,7 +391,7 @@ define([
             return mxObjects.map(lang.hitch(this, function(mxobj) {
                 return {
                     "email": mxobj.get(this.primaryKeyAttr),
-                    "fullName": mxobj.get("FullName"),
+                    "fullName": mxobj.get(this.nodeLabelAttr),
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": this._getImageUrl(mxobj.get(this.enumAttr)),
                     "orgLayer": mxobj.get(this.orgLayerRankAttr),
