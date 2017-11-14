@@ -27,15 +27,19 @@ define([
         widgetBase: null,
 
         // modeler variables.
+        // data source
         dataEntity: null,
         ctxEntity: null,
         primaryKeyAttr: null,
         foreignKeyAttr: null,
-        enumAttr: null,
-        enumImageMapping: null,
-        editForm: null,
         dataMicroflow: null,
         orgLayerRankAttr: null,
+        // appearance
+        enumAttr: null,
+        enumImageMapping: null,
+        // behavior
+        onClickMicroflow: null,
+        editForm: null,
 
         // Internal variables.
         _handles: null,
@@ -132,6 +136,7 @@ define([
         },
 
         __drawGraph: function(__drawGraph) {
+            var theWidget = this;
 
             var originalName;
             var originalEmal;
@@ -230,7 +235,7 @@ define([
                 })
                 .attr("width", nodeSize)
                 .attr("height", nodeSize)
-                .on('click', nodeInfo)
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
 
             node.append("text")
                 .attr("dy", "0.31em")
@@ -271,6 +276,30 @@ define([
                     console.log(d);
                 }
             }
+        },
+
+        /**
+         * On Node Click
+         * @param {D3Node} e - the node that was clicked
+         */
+        _onNodeClick: function(e) {
+            // e.data.guid
+            if (this.onClickMicroflow) {
+                mx.data.action({
+                    params: {
+                        actionname: this.onClickMicroflow,
+                        applyto: "selection",
+                        guids: [e.data.guid]
+                    },
+                    origin: this.mxform,
+                    callback: function() {
+                        console.debug("microflow executed with GUID: " + e.data.guid)
+                    }
+                })
+            } else {
+                console.debug("No On-Click microflow defined. Check the widget properties.")
+            }
+
         },
 
         /**

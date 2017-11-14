@@ -91,5 +91,11 @@
             <category>Behavior</category>
             <description>Form to open on click</description>
         </property>
+        <property key="onClickMicroflow" type="microflow" required="false" entityProperty="dataEntity">
+            <caption>On Click</caption>
+            <category>Behavior</category>
+            <description>The microflow to execute on click. Receives the `Data Entity` object for the node that was clicked.</description>
+            <returnType type="Void"></returnType>
+        </property>
     </properties>
 </widget>
