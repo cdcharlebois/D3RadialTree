@@ -27,21 +27,26 @@ define([
         widgetBase: null,
 
         // modeler variables.
+        // data source
         dataEntity: null,
         ctxEntity: null,
         primaryKeyAttr: null,
         foreignKeyAttr: null,
-        enumAttr: null,
-        enumImageMapping: null,
-        editForm: null,
         dataMicroflow: null,
         orgLayerRankAttr: null,
+        // appearance
+        enumAttr: null,
+        enumImageMapping: null,
+        // behavior
+        onClickMicroflow: null,
+        editForm: null,
 
         // Internal variables.
         _handles: null,
         _contextObj: null,
         _totalErrors: {},
         _errorState: null,
+        _imageHelper: {},
 
         //dummy 
         __jsonTestData: [{
@@ -79,6 +84,11 @@ define([
 
         postCreate: function() {
             logger.debug(this.id + ".postCreate");
+            // setup enumimagemapping
+            console.log(this.enumImageMapping);
+            this.enumImageMapping.forEach(lang.hitch(this, function(keyImagePair) {
+                this._imageHelper[keyImagePair.enumKey] = mx.appUrl + keyImagePair.image;
+            }));
         },
 
         update: function(obj, callback) {
@@ -88,6 +98,17 @@ define([
             this._gatherDataAndDrawGraph(callback);
             // this.__drawGraph(this.__jsonTestData);
 
+        },
+
+        /**
+         * Get Image URL
+         * ---
+         * @param {String} key - the enum value that has been mapped to an image. Should be
+         * the value of mxobj.get(this.enumAttr);
+         * @returns {String} - the image URL
+         */
+        _getImageUrl: function(key) {
+            return this._imageHelper[key];
         },
 
         _gatherDataAndDrawGraph: function(callback) {
@@ -132,6 +153,7 @@ define([
         },
 
         __drawGraph: function(__drawGraph) {
+            var theWidget = this;
 
             var originalName;
             var originalEmal;
@@ -155,44 +177,42 @@ define([
                 .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
             var stratify = d3.stratify()
-                .parentId(function(d){ return d['manager'] })
-                .id(function(d){ return d['email'] })
+                .parentId(function(d) { return d['manager'] })
+                .id(function(d) { return d['email'] })
 
-                var root = tree(stratify(__drawGraph));
-                
-                var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
-                var toolTip = d3.select('body').append('div');
-                    toolTip.attr('id', 'tooltip')
-    
-                var defs = svg.append("defs");
-                var filter = defs.append("filter")
+            var root = tree(stratify(__drawGraph));
+
+            var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+            var toolTip = d3.select('body').append('div');
+            toolTip.attr('id', 'tooltip')
+
+            var defs = svg.append("defs");
+            var filter = defs.append("filter")
                 .attr("id", "drop-shadow")
                 .attr("height", "130%");
-    
-                filter.append("feGaussianBlur")
+
+            filter.append("feGaussianBlur")
                 .attr("in", "SourceAlpha")
                 .attr("stdDeviation", 2)
                 .attr("result", "blur");
-    
-                filter.append("feOffset")
+
+            filter.append("feOffset")
                 .attr("in", "blur")
                 .attr("dx", 1)
                 .attr("dy", 2)
                 .attr("result", "offsetBlur");
-    
-                var feMerge = filter.append("feMerge");
-                feMerge.append("feMergeNode")
+
+            var feMerge = filter.append("feMerge");
+            feMerge.append("feMergeNode")
                 .attr("in", "offsetBlur")
-                feMerge.append("feMergeNode")
+            feMerge.append("feMergeNode")
                 .attr("in", "SourceGraphic");
-                    
-                // width = +svg.attr("width"),
-                // height = +svg.attr("height"),
-                // g = svg.append("g").attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
-                var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
-    
-        
-          
+
+            // width = +svg.attr("width"),
+            // height = +svg.attr("height"),
+            // g = svg.append("g").attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
+            var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
+
             var link = g.selectAll(".link")
                 .data(root.links())
                 .enter().append("path")
@@ -204,41 +224,66 @@ define([
             var node = g.selectAll(".node")
                 .data(root.descendants())
                 .enter().append("g")
-                    .attr("class", function(d) {  return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                    .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-                    .attr('cursor', 'pointer');
-                    node.append("circle")
-                    .attr("r", (d) => {              
-                      return nodeRadius;
-                    })
-                    .attr('fill', nodeColor)
-                    .attr('stroke', (d) => { return '#000000'})
-                    .on('click', nodeInfo)
+                .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+                .attr('cursor', 'pointer');
+            node.append("circle")
+                .attr("r", (d) => {
+                    return nodeRadius;
+                })
+                .attr('fill', nodeColor)
+                .attr('stroke', (d) => { return '#000000' })
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
 
-        
-                    function nodeColor(d){              
-                        switch(d.data['Message']){
-                          case 'Do not participate': return '#D8D8D8';
-                            break;
-                          case 'Warning':  return '#E87408';
-                            break;
-                          default:
-                              return '#000000';                     
-                        }
-                        if (d.data['Message']){                         
-                          return '#FADF0A';
-                        } 
-                    }
+            function nodeColor(d) {
+                switch (d.data['Message']) {
+                    case 'Do not participate':
+                        return '#D8D8D8';
+                        break;
+                    case 'Warning':
+                        return '#E87408';
+                        break;
+                    default:
+                        return '#000000';
+                }
+                if (d.data['Message']) {
+                    return '#FADF0A';
+                }
+            }
 
-        function radialPoint(x, y) {
-            return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
-            }        
+            function radialPoint(x, y) {
+                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+            }
             //get data from node
             function nodeInfo(d) {
                 if (d.data !== null) {
                     console.log(d);
                 }
             }
+        },
+
+        /**
+         * On Node Click
+         * @param {D3Node} e - the node that was clicked
+         */
+        _onNodeClick: function(e) {
+            // e.data.guid
+            if (this.onClickMicroflow) {
+                mx.data.action({
+                    params: {
+                        actionname: this.onClickMicroflow,
+                        applyto: "selection",
+                        guids: [e.data.guid]
+                    },
+                    origin: this.mxform,
+                    callback: function() {
+                        console.debug("microflow executed with GUID: " + e.data.guid)
+                    }
+                })
+            } else {
+                console.debug("No On-Click microflow defined. Check the widget properties.")
+            }
+
         },
 
         /**
@@ -330,7 +375,7 @@ define([
                     "fullName": mxobj.get("FullName"),
                     // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
-                    "icon": "ok",
+                    "icon": this._getImageUrl(mxobj.get(this.enumAttr)),
                     "orgLayer": mxobj.get(this.orgLayerRankAttr),
                     "guid": mxobj.getGuid()
                 }
