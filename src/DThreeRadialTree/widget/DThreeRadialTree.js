@@ -34,10 +34,14 @@ define([
         enumAttr: null,
         enumImageMapping: null,
         editForm: null,
+        dataMicroflow: null,
+        orgLayerRankAttr: null,
 
         // Internal variables.
         _handles: null,
         _contextObj: null,
+        _totalErrors: {},
+        _errorState: null,
 
         //dummy 
         __jsonTestData: [{
@@ -79,16 +83,52 @@ define([
 
         update: function(obj, callback) {
             logger.debug(this.id + ".update");
+            this._errorState = null;
             this._contextObj = obj;
+            this._gatherDataAndDrawGraph(callback);
+            // this.__drawGraph(this.__jsonTestData);
+
+        },
+
+        _gatherDataAndDrawGraph: function(callback) {
             this._gatherData()
                 .then(lang.hitch(this, function(data) {
                     this.__drawGraph(data);
-                    this._updateRendering(callback);
+                    console.debug("===== EXCLUSION SUMMARY =====");
+                    var total = 0;
+                    for (var key in this._totalErrors) {
+                        console.debug("" + this._totalErrors[key] + " total exclusions because --> " + key);
+                        total += this._totalErrors[key];
+                    }
+                    console.debug("== Total: " + total + " exclusions ==");
+                    this._finishUpdate(callback);
+                }))
+                .catch(lang.hitch(this, function(err) {
+                    console.error("ERROR OCCURRED: " + this._errorState);
+                    this._finishUpdate(callback);
                 }));
+        },
 
+        /**
+         * On Finally
+         */
+        _finishUpdate: function(callback) {
+            this._resetSubscriptions();
+            this._updateRendering(callback);
+        },
 
-            // this.__drawGraph(this.__jsonTestData);
-
+        /**
+         * Reset Subscriptions
+         * ---
+         * Subscribe to the Context object for changes
+         */
+        _resetSubscriptions: function() {
+            this.subscribe({
+                guid: this._contextObj.getGuid(),
+                callback: lang.hitch(this, function(guid) {
+                    this._gatherDataAndDrawGraph();
+                })
+            });
         },
 
         __drawGraph: function(__drawGraph) {
@@ -158,12 +198,9 @@ define([
                 .enter().append("path")
                 .attr("class", "link")
                 .attr("d", d3.linkRadial()
-                .angle(function(d) { return d.x; })
-                .radius(function(d) { return d.y; }));
-            
-                
-                
-    
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
+
             var node = g.selectAll(".node")
                 .data(root.descendants())
                 .enter().append("g")
@@ -197,8 +234,8 @@ define([
             return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             }        
             //get data from node
-            function nodeInfo(d){
-                if(d.data !== null){
+            function nodeInfo(d) {
+                if (d.data !== null) {
                     console.log(d);
                 }
             }
@@ -215,17 +252,24 @@ define([
                 // 1. Fetch the entities to be used as the nodes
                 this._featchEntitiesFromMicroflow()
                     .then(lang.hitch(this, function(mxObjects) {
-                        var includedNodes = this._cleanUpData(mxObjects),
-                            chartObjs = this._mapToChartObjects(includedNodes);
-                        resolve(chartObjs)
+                        var includedNodes = this._cleanUpData(mxObjects);
+                        if (this._errorState) {
+                            reject();
+                        } else {
+                            var chartObjs = this._mapToChartObjects(includedNodes);
+                            resolve(chartObjs);
+                        }
                     }))
-            })); 
+            }));
         },
 
         _cleanUpData: function(mxObjects) {
             // return new Promise(lang.hitch(this, function(resolve) {
             this._setCEOAsRoot(mxObjects);
-            var sortedMxObjects = this._sortMxObjects(mxObjects, "OrgLayer"),
+            if (this._errorState) {
+                return;
+            }
+            var sortedMxObjects = this._sortMxObjects(mxObjects, this.orgLayerRankAttr),
                 include = this._getValidMxObjects(sortedMxObjects);
             return (include);
             // }));
@@ -252,19 +296,19 @@ define([
             }));
         },
 
-        _featchEntitiesFromMicroflow: function(mfName){
-            return new Promise(lang.hitch(this, function(resolve, reject){
+        _featchEntitiesFromMicroflow: function(mfName) {
+            return new Promise(lang.hitch(this, function(resolve, reject) {
                 mx.data.action({
-                    params:{
+                    params: {
                         applyto: "selection",
                         actionname: this.dataMicroflow,
                         guids: [this._contextObj.getGuid()]
                     },
                     origin: this.mxform,
-                    callback: lang.hitch(this, function(data){
+                    callback: lang.hitch(this, function(data) {
                         resolve(data);
                     }),
-                    error: function(error){
+                    error: function(error) {
                         console.log(error);
                         reject(error);
                     }
@@ -287,7 +331,8 @@ define([
                     // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": "ok",
-                    "orgLayer": mxobj.get("OrgLayer")
+                    "orgLayer": mxobj.get(this.orgLayerRankAttr),
+                    "guid": mxobj.getGuid()
                 }
             }));
             // }));
@@ -306,14 +351,25 @@ define([
             var include = [];
             mxObjects.forEach(lang.hitch(this, function(mxObj) {
                 // is `mxObj` valid?
-                if (!mxObj.get("OrgLayer") || mxObj.get("Orphan") || this._isDuplicate(mxObj, include)) return;
+                if (!mxObj.get(this.orgLayerRankAttr) || mxObj.get("Orphan") || this._isDuplicate(mxObj, include)) {
+                    if (!mxObj.get(this.orgLayerRankAttr)) {
+                        this._logExclusionMessage(mxObj, "attribute [Org Layer] is undefined");
+                    } else if (mxObj.get("Orphan")) {
+                        this._logExclusionMessage(mxObj, "attribute [Orphan] is true");
+                    } else {
+                        this._logExclusionMessage(mxObj, "there is already a node with this value for [" + this.primaryKeyAttr + "]");
+                    }
+                    return;
+                }
                 // does the parent of `mxObj` exist?
                 var parent = include.find(lang.hitch(this, function(parentObj) {
-                    return (parentObj.get("OrgLayer") * 1 === mxObj.get("OrgLayer") * 1 - 1) &&
+                    return (parentObj.get(this.orgLayerRankAttr) * 1 === mxObj.get(this.orgLayerRankAttr) * 1 - 1) &&
                         parentObj.get(this.primaryKeyAttr) === mxObj.get(this.foreignKeyAttr)
                 }))
-                if (parent || mxObj.get("OrgLayer") * 1 === 0) {
+                if (parent || mxObj.get(this.orgLayerRankAttr) * 1 === 0) {
                     include.push(mxObj);
+                } else {
+                    this._logExclusionMessage(mxObj, "could not find a parent with [" + this.primaryKeyAttr + "=" + mxObj.get(this.foreignKeyAttr) + "]")
                 }
             }));
             return include;
@@ -349,7 +405,13 @@ define([
             var ceo = mxObjects.find(lang.hitch(this, function(mxobj) {
                 return mxobj.get("CEO")
             }));
-            ceo.set(this.foreignKeyAttr, "");
+            if (ceo) {
+                ceo.set(this.foreignKeyAttr, "");
+            } else {
+                this._errorState = "No CEO"
+                console.error(">>>>> No CEO found in the dataset. The chart will fail.")
+            }
+
         },
 
         /**
@@ -363,6 +425,12 @@ define([
                 return obj.get(this.primaryKeyAttr) === mxObj.get(this.primaryKeyAttr)
             }))
             return !!existing;
+        },
+
+        _logExclusionMessage: function(mxObj, message) {
+            this._totalErrors[message] = this._totalErrors[message] + 1 || 1;
+            var errorMessage = "Excluding node " + mxObj.get(this.primaryKeyAttr) + " because: " + message;
+            console.debug(errorMessage);
         },
 
         resize: function(box) {

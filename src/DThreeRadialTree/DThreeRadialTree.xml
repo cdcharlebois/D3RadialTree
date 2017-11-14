@@ -13,10 +13,18 @@
             <category>Data Source</category>
             <description>The base entity for the nodes on the tree.</description>
         </property>
-        <property key="ctxEntity" type="entity" required="true" isPath="yes" allowNonPersistableEntities="true" pathType="reference" entityProperty="dataEntity">
+        <!-- <property key="ctxEntity" type="entity" required="true" isPath="yes" allowNonPersistableEntities="true" pathType="reference" entityProperty="dataEntity">
             <caption>Path to Context</caption>
             <category>Data Source</category>
             <description></description>
+        </property> -->
+        <property key="orgLayerRankAttr" type="attribute" required="true" isPath="optional" pathType="reference" entityProperty="dataEntity">
+            <caption>Org Level Attr</caption>
+            <category>Data Source</category>
+            <description>Starting at 0 for the CEO, then increasing by 1 for each layer of reports</description>
+            <attributeTypes>
+                <attributeType name="Integer" />
+            </attributeTypes>
         </property>
         <property key="primaryKeyAttr" type="attribute" required="true" isPath="no" entityProperty="dataEntity">
             <caption>Primary Key</caption>
