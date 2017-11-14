@@ -188,16 +188,13 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
-<<<<<<< HEAD
+                .call(d3.zoom().on('zoom', function(){
+                    svg.attr("transform", d3.event.transform)
+                }))
             
 
 
-=======
-                .call(d3.zoom().on("zoom", function() {
-                    svg.attr("transform", d3.event.transform)
-                }))
->>>>>>> 57d136af6a63334ecad017ce97dc53a800b11e34
-
+ 
             var toolTip = d3.select('body').append('div');
             toolTip.attr('id', 'tooltip')
 
