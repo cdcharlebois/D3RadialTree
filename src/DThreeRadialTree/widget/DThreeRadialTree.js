@@ -37,6 +37,8 @@ define([
         // appearance
         enumAttr: null,
         enumImageMapping: null,
+        nodeSize: null,
+
         // behavior
         onClickMicroflow: null,
         editForm: null,
@@ -159,10 +161,7 @@ define([
             this.domNode.innerHTML = "";
             var theWidget = this;
 
-            var originalName;
-            var originalEmal;
-            var originalManagerEmail;
-            var originalMessage;
+            var imageSize = this.nodeSize;
             var nodeRadius = 4;
             var labelSize = 10;
             var textDistancePositive = 10;
@@ -211,9 +210,6 @@ define([
             feMerge.append("feMergeNode")
                 .attr("in", "SourceGraphic");
 
-            // width = +svg.attr("width"),
-            // height = +svg.attr("height"),
-            // g = svg.append("g").attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
             var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
             var link = g.selectAll(".link")
@@ -230,14 +226,17 @@ define([
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer');
-            node.append("circle")
-                .attr("r", (d) => {
-                    return nodeRadius;
+            
+                node.append("image")
+                .attr("xlink:href", function(d){
+                    return d.data.icon;
                 })
-                .attr('fill', nodeColor)
-                .attr('stroke', (d) => { return '#000000' })
+                .attr('width', imageSize)
+                .attr('height', imageSize)
+                .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
-
+        
+``
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
