@@ -47,6 +47,7 @@ define([
         _totalErrors: {},
         _errorState: null,
         _imageHelper: {},
+        _scaleFactor: 1,
 
         //dummy 
         __jsonTestData: [{
@@ -153,6 +154,7 @@ define([
         },
 
         __drawGraph: function(__drawGraph) {
+            this.domNode.innerHTML = "";
             var theWidget = this;
 
             var originalName;
@@ -163,7 +165,7 @@ define([
             var labelSize = 10;
             var textDistancePositive = 10;
             var textDistanceNegitive = -10;
-            var treeSize = 880;
+            var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 3));
             var toolTipSize = '10px';
             var nodeSize = 16;
             var selectedNode;
@@ -252,6 +254,7 @@ define([
             }
 
             function radialPoint(x, y) {
+                // y /= 2;
                 return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             }
             //get data from node
@@ -480,6 +483,7 @@ define([
 
         resize: function(box) {
             logger.debug(this.id + ".resize");
+            this._gatherDataAndDrawGraph();
         },
 
         uninitialize: function() {
