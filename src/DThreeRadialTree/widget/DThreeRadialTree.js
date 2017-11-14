@@ -49,9 +49,9 @@ define([
         // Internal variables.
         _handles: null,
         _contextObj: null,
-        _totalErrors: {},
+        _totalErrors: null,
         _errorState: null,
-        _imageHelper: {},
+        _imageHelper: null,
         _scaleFactor: 1,
 
         //dummy 
@@ -86,6 +86,8 @@ define([
 
         constructor: function() {
             this._handles = [];
+            this._totalErrors = {};
+            this._imageHelper = {};
         },
 
         postCreate: function() {
@@ -176,8 +178,8 @@ define([
             var nodeSize = 16;
             var active = d3.select(null);
             var zoom = d3.zoom()
-                    .scaleExtent([1, 8])
-                    .on("zoom", zoomed);
+                .scaleExtent([1, 8])
+                .on("zoom", zoomed);
 
             var width = this.domNode.getBoundingClientRect().width,
                 height = width;
@@ -193,14 +195,7 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
-<<<<<<< HEAD
-                svg.call(zoom);
-            
-=======
-                .call(d3.zoom().on('zoom', function() {
-                    svg.attr("transform", d3.event.transform)
-                }))
->>>>>>> 122b608fb64715e41bd16cde034673b4e70fb3b2
+            svg.call(zoom);
 
             var toolTip = d3.select('body').append('div');
             toolTip.attr('id', 'tooltip')
@@ -231,7 +226,7 @@ define([
 
             function zoomed() {
                 g.attr("transform", d3.event.transform); // updated for d3 v4
-              };
+            };
 
             // this._ExitAllNodes(g.selectAll(".node"));
 
