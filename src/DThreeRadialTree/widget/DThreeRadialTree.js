@@ -164,8 +164,8 @@ define([
             var imageSize = this.nodeSize;
             var nodeRadius = 4;
             var labelSize = 10;
-            var textDistancePositive = 10;
-            var textDistanceNegitive = -10;
+            var textDistancePositive = this.nodeSize;
+            var textDistanceNegitive = this.nodeSize * -1;
             var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 3));
             var toolTipSize = '10px';
             var nodeSize = 16;
@@ -185,6 +185,12 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+            .call(d3.zoom().on("zoom", function () {
+                svg.attr("transform", d3.event.transform)
+            }))
+
+
+
             var toolTip = d3.select('body').append('div');
             toolTip.attr('id', 'tooltip')
 
@@ -212,6 +218,7 @@ define([
 
             var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
+
             var link = g.selectAll(".link")
                 .data(root.links())
                 .enter().append("path")
@@ -226,17 +233,20 @@ define([
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer')
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
             
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
                 .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
                 .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
-                //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
                 .text(function(d) { return d.data['fullName'] })
                 //.attr('visibility', 'hidden')
                 .style('font-size', (d) => { return labelSize; })
+                .style('padding-left', '10px')
+                .attr('class', 'd3ChartLabel')
                 .attr('fill', '#000000')
+                
 
             
                 node.append("image")
@@ -246,7 +256,7 @@ define([
                 .attr('width', imageSize)
                 .attr('height', imageSize)
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
-                .on('click', lang.hitch(theWidget, this._onNodeClick))
+                
         
 ``
 
