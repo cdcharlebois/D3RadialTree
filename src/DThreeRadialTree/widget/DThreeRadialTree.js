@@ -225,7 +225,19 @@ define([
                 .enter().append("g")
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-                .attr('cursor', 'pointer');
+                .attr('cursor', 'pointer')
+            
+            node.append("text")
+                .attr("dy", "0.31em")
+                .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
+                .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
+                .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
+                //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
+                .text(function(d) { return d.data['fullName'] })
+                //.attr('visibility', 'hidden')
+                .style('font-size', (d) => { return labelSize; })
+                .attr('fill', '#000000')
+
             
                 node.append("image")
                 .attr("xlink:href", function(d){
@@ -237,17 +249,8 @@ define([
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
         
 ``
-            node.append("text")
-                .attr("dy", "0.31em")
-                .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
-                .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
-                .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
-                //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
-                .text(function(d) { return d.data['fullName'] })
-                //.attr('visibility', 'hidden')
-                .style('font-size', (d) => { return labelSize; })
-                .attr('fill', '#000000')
-                .exit().remove();
+
+               
 
             function nodeColor(d) {
                 switch (d.data['Message']) {
