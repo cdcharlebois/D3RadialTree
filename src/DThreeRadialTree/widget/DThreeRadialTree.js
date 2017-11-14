@@ -129,7 +129,7 @@ define([
                     this._finishUpdate(callback);
                 }))
                 .catch(lang.hitch(this, function(err) {
-                    console.error("ERROR OCCURRED: " + this._errorState || err.message);
+                    console.error("ERROR OCCURRED: " + (this._errorState || err.message));
                     this._finishUpdate(callback);
                 }));
         },
@@ -226,17 +226,17 @@ define([
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer');
-            
-                node.append("image")
-                .attr("xlink:href", function(d){
+
+            node.append("image")
+                .attr("xlink:href", function(d) {
                     return d.data.icon;
                 })
                 .attr('width', imageSize)
                 .attr('height', imageSize)
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
-        
-``
+
+            ``
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
