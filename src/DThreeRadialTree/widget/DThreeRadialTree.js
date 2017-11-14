@@ -225,18 +225,8 @@ define([
                 .enter().append("g")
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-                .attr('cursor', 'pointer');
+                .attr('cursor', 'pointer')
 
-            node.append("image")
-                .attr("xlink:href", function(d) {
-                    return d.data.icon;
-                })
-                .attr('width', imageSize)
-                .attr('height', imageSize)
-                .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
-                .on('click', lang.hitch(theWidget, this._onNodeClick))
-
-            ``
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
@@ -247,7 +237,15 @@ define([
                 //.attr('visibility', 'hidden')
                 .style('font-size', (d) => { return labelSize; })
                 .attr('fill', '#000000')
-                .exit().remove();
+
+            node.append("image")
+                .attr("xlink:href", function(d) {
+                    return d.data.icon;
+                })
+                .attr('width', imageSize)
+                .attr('height', imageSize)
+                .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
 
             function nodeColor(d) {
                 switch (d.data['Message']) {
