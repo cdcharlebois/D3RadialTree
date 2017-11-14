@@ -127,7 +127,7 @@ define([
                     this._finishUpdate(callback);
                 }))
                 .catch(lang.hitch(this, function(err) {
-                    console.error("ERROR OCCURRED: " + this._errorState);
+                    console.error("ERROR OCCURRED: " + this._errorState || err.message);
                     this._finishUpdate(callback);
                 }));
         },
