@@ -52,7 +52,7 @@
         <!-- =====
         APPEARANCE
         ====== -->
-        <property key="nodeLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference">
+        <property key="nodeLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference" entityProperty="dataEntity">
             <caption>Label Attr</caption>
             <category>Appearance</category>
             <description>Which field should we used for the label of the node on the chart?</description>
@@ -60,7 +60,7 @@
                 <attributeType name="String" />
             </attributeTypes>
         </property>
-        <property key="nodeShowLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference">
+        <property key="nodeShowLabelAttr" type="attribute" required="false" isPath="optional" pathType="reference" entityProperty="dataEntity">
             <caption>Show Name Attr</caption>
             <category>Appearance</category>
             <description>Should we show the label on the node? (true shows, and false hides), if left empty, we show all names.</description>
@@ -68,7 +68,7 @@
                 <attributeType name="Boolean" />
             </attributeTypes>
         </property>
-        <property key="nodeFocusAttr" type="attribute" required="true" isPath="optional" pathType="reference">
+        <property key="nodeFocusAttr" type="attribute" required="false" isPath="optional" pathType="reference" entityProperty="dataEntity">
             <caption>Node Focus Attr</caption>
             <category>Appearance</category>
             <description>Boolean attribute that determines if the node should be focused</description>
