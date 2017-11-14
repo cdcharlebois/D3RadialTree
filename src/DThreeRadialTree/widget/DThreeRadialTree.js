@@ -148,6 +148,7 @@ define([
          * Subscribe to the Context object for changes
          */
         _resetSubscriptions: function() {
+            this.unsubscribeAll();
             this.subscribe({
                 guid: this._contextObj.getGuid(),
                 callback: lang.hitch(this, function(guid) {
@@ -387,7 +388,6 @@ define([
                 return {
                     "email": mxobj.get(this.primaryKeyAttr),
                     "fullName": mxobj.get("FullName"),
-                    // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": this._getImageUrl(mxobj.get(this.enumAttr)),
                     "orgLayer": mxobj.get(this.orgLayerRankAttr),
