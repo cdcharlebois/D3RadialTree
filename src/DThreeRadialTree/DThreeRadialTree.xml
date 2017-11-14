@@ -83,6 +83,12 @@
                 </property>
             </properties>
         </property>
+        <property key="nodeSize" type="integer" required="true" defaultValue="0">
+            <caption>Node Size</caption>
+            <category>Appearance</category>
+            <description>Set size of nodes</description>
+        </property>
+      
         <!-- ===
         BEHAVIOR
         ==== -->
