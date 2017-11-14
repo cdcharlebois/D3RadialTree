@@ -121,7 +121,8 @@ define([
             this._totalErrors = {}; //reset
             this._gatherData()
                 .then(lang.hitch(this, function(data) {
-                    this.__drawGraph(data);
+                    this._treeNodes = data;
+                    this.__drawGraph();
                     console.debug("===== EXCLUSION SUMMARY =====");
                     var total = 0;
                     for (var key in this._totalErrors) {
@@ -160,7 +161,8 @@ define([
             });
         },
 
-        __drawGraph: function(__drawGraph) {
+        __drawGraph: function() {
+            var __drawGraph = this._treeNodes;
             this.domNode.innerHTML = "";
             var theWidget = this;
 
@@ -223,16 +225,20 @@ define([
                 .data(root.links())
                 .enter().append("path")
                 .attr("class", "link")
-                .attr("d", d3.linkRadial()
-                    .angle(function(d) { return d.x; })
-                    .radius(function(d) { return d.y; }));
+            this._linkEnterTransition(link);
 
             var node = g.selectAll(".node")
                 .data(root.descendants())
                 .enter().append("g")
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+                // .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer')
+            var radialPoint = function radialPoint(x, y) {
+                // y /= 2;
+                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+            };
+            this._nodeEnterTransition(node, radialPoint);
+
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
@@ -270,16 +276,24 @@ define([
                 }
             }
 
-            function radialPoint(x, y) {
-                // y /= 2;
-                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
-            }
             //get data from node
             function nodeInfo(d) {
                 if (d.data !== null) {
                     console.log(d);
                 }
             }
+        },
+
+        _nodeEnterTransition: function(node, radialPoint) {
+            var nodeTransition = node.transition().duration(1000).attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+            nodeTransition.selectAll(".node");
+        },
+
+        _linkEnterTransition: function(link) {
+            var linkTransition = link.transition().duration(1000)
+                .attr("d", d3.linkRadial()
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
         },
 
         /**
@@ -527,7 +541,7 @@ define([
 
         resize: function(box) {
             logger.debug(this.id + ".resize");
-            this._gatherDataAndDrawGraph();
+            this.__drawGraph();
         },
 
         uninitialize: function() {
