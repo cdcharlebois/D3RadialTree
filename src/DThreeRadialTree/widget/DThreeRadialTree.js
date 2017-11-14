@@ -121,7 +121,8 @@ define([
             this._totalErrors = {}; //reset
             this._gatherData()
                 .then(lang.hitch(this, function(data) {
-                    this.__drawGraph(data);
+                    this._treeNodes = data;
+                    this.__drawGraph();
                     console.debug("===== EXCLUSION SUMMARY =====");
                     var total = 0;
                     for (var key in this._totalErrors) {
@@ -160,7 +161,8 @@ define([
             });
         },
 
-        __drawGraph: function(__drawGraph) {
+        __drawGraph: function() {
+            var __drawGraph = this._treeNodes;
             this.domNode.innerHTML = "";
             var theWidget = this;
 
@@ -191,11 +193,15 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+<<<<<<< HEAD
                 svg.call(zoom);
             
+=======
+                .call(d3.zoom().on('zoom', function() {
+                    svg.attr("transform", d3.event.transform)
+                }))
+>>>>>>> 122b608fb64715e41bd16cde034673b4e70fb3b2
 
-
- 
             var toolTip = d3.select('body').append('div');
             toolTip.attr('id', 'tooltip')
 
@@ -227,24 +233,30 @@ define([
                 g.attr("transform", d3.event.transform); // updated for d3 v4
               };
 
+            // this._ExitAllNodes(g.selectAll(".node"));
+
             var link = g.selectAll(".link")
                 .data(root.links())
                 .enter().append("path")
-                .style("fill", "none")
+                .attr("class", "link")
                 .style("stroke", "#555")
-                .style("stroke-opacity", "0.4")
+                .style("stroke-opacity", "0")
                 .style("stroke-width", "1.5px")
-
-                .attr("d", d3.linkRadial()
-                    .angle(function(d) { return d.x; })
-                    .radius(function(d) { return d.y; }));
+                .style("fill", "none")
+            this._linkEnterTransition(link);
 
             var node = g.selectAll(".node")
                 .data(root.descendants())
                 .enter().append("g")
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+                // .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer')
+            var radialPoint = function radialPoint(x, y) {
+                // y /= 2;
+                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+            };
+            this._nodeEnterTransition(node, radialPoint);
+
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
@@ -266,13 +278,26 @@ define([
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
 
-
-
             function radialPoint(x, y) {
                 // y /= 2;
                 return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             }
 
+        },
+
+        _nodeEnterTransition: function(node, radialPoint) {
+            var nodeTransition = node.transition().duration(1000).ease(d3.easeCubicInOut)
+                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+            nodeTransition.selectAll(".node");
+        },
+
+        _linkEnterTransition: function(link) {
+            var linkTransition = link.transition().duration(1500).ease(d3.easeCubicInOut)
+                .style("stroke-opacity", "0.4")
+                .attr("d", d3.linkRadial()
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
+            linkTransition.selectAll(".link");
         },
 
         /**
@@ -520,7 +545,7 @@ define([
 
         resize: function(box) {
             logger.debug(this.id + ".resize");
-            this._gatherDataAndDrawGraph();
+            this.__drawGraph();
         },
 
         uninitialize: function() {
