@@ -46,6 +46,7 @@ define([
         _contextObj: null,
         _totalErrors: {},
         _errorState: null,
+        _imageHelper: {},
 
         //dummy 
         __jsonTestData: [{
@@ -83,6 +84,11 @@ define([
 
         postCreate: function() {
             logger.debug(this.id + ".postCreate");
+            // setup enumimagemapping
+            console.log(this.enumImageMapping);
+            this.enumImageMapping.forEach(lang.hitch(this, function(keyImagePair) {
+                this._imageHelper[keyImagePair.enumKey] = mx.appUrl + keyImagePair.image;
+            }));
         },
 
         update: function(obj, callback) {
@@ -92,6 +98,17 @@ define([
             this._gatherDataAndDrawGraph(callback);
             // this.__drawGraph(this.__jsonTestData);
 
+        },
+
+        /**
+         * Get Image URL
+         * ---
+         * @param {String} key - the enum value that has been mapped to an image. Should be
+         * the value of mxobj.get(this.enumAttr);
+         * @returns {String} - the image URL
+         */
+        _getImageUrl: function(key) {
+            return this._imageHelper[key];
         },
 
         _gatherDataAndDrawGraph: function(callback) {
@@ -358,7 +375,7 @@ define([
                     "fullName": mxobj.get("FullName"),
                     // "isCEO": false,
                     "manager": mxobj.get(this.foreignKeyAttr),
-                    "icon": "ok",
+                    "icon": this._getImageUrl(mxobj.get(this.enumAttr)),
                     "orgLayer": mxobj.get(this.orgLayerRankAttr),
                     "guid": mxobj.getGuid()
                 }
