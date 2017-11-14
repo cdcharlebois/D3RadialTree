@@ -190,7 +190,7 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
-                .call(d3.zoom().on("zoom", function() {
+                .call(d3.zoom().on('zoom', function() {
                     svg.attr("transform", d3.event.transform)
                 }))
 
@@ -221,10 +221,16 @@ define([
 
             var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
+            // this._ExitAllNodes(g.selectAll(".node"));
+
             var link = g.selectAll(".link")
                 .data(root.links())
                 .enter().append("path")
                 .attr("class", "link")
+                .style("stroke", "#555")
+                .style("stroke-opacity", "0")
+                .style("stroke-width", "1.5px")
+                .style("fill", "none")
             this._linkEnterTransition(link);
 
             var node = g.selectAll(".node")
@@ -260,40 +266,26 @@ define([
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
 
-            function nodeColor(d) {
-                switch (d.data['Message']) {
-                    case 'Do not participate':
-                        return '#D8D8D8';
-                        break;
-                    case 'Warning':
-                        return '#E87408';
-                        break;
-                    default:
-                        return '#000000';
-                }
-                if (d.data['Message']) {
-                    return '#FADF0A';
-                }
+            function radialPoint(x, y) {
+                // y /= 2;
+                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             }
 
-            //get data from node
-            function nodeInfo(d) {
-                if (d.data !== null) {
-                    console.log(d);
-                }
-            }
         },
 
         _nodeEnterTransition: function(node, radialPoint) {
-            var nodeTransition = node.transition().duration(1000).attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+            var nodeTransition = node.transition().duration(1000).ease(d3.easeCubicInOut)
+                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
             nodeTransition.selectAll(".node");
         },
 
         _linkEnterTransition: function(link) {
-            var linkTransition = link.transition().duration(1000)
+            var linkTransition = link.transition().duration(1500).ease(d3.easeCubicInOut)
+                .style("stroke-opacity", "0.4")
                 .attr("d", d3.linkRadial()
                     .angle(function(d) { return d.x; })
                     .radius(function(d) { return d.y; }));
+            linkTransition.selectAll(".link");
         },
 
         /**
