@@ -113,6 +113,7 @@ define([
         },
 
         _gatherDataAndDrawGraph: function(callback) {
+            this._totalErrors = {}; //reset
             this._gatherData()
                 .then(lang.hitch(this, function(data) {
                     this.__drawGraph(data);
@@ -170,9 +171,8 @@ define([
             var nodeSize = 16;
             var selectedNode;
 
-            var margin = { top: 40, right: 100, bottom: 0, left: 100 },
-                width = window.innerWidth - margin.left - margin.right,
-                height = window.innerHeight - margin.top - margin.bottom;
+            var width = this.domNode.getBoundingClientRect().width,
+                height = width;
 
             var tree = d3.tree()
                 .size([2 * Math.PI, treeSize])
@@ -236,7 +236,7 @@ define([
                 .attr('fill', nodeColor)
                 .attr('stroke', (d) => { return '#000000' })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
-            
+
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
@@ -245,7 +245,7 @@ define([
                 //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
                 .text(function(d) { return d.data['fullName'] })
                 //.attr('visibility', 'hidden')
-                .style('font-size', (d) => { return labelSize;})
+                .style('font-size', (d) => { return labelSize; })
                 .attr('fill', '#000000')
                 .exit().remove();
 
