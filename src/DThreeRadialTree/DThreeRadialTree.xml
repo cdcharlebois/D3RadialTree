@@ -92,11 +92,6 @@
         <!-- ===
         BEHAVIOR
         ==== -->
-        <property key="editForm" type="form">
-            <caption>Edit Form</caption>
-            <category>Behavior</category>
-            <description>Form to open on click</description>
-        </property>
         <property key="onClickMicroflow" type="microflow" required="false" entityProperty="dataEntity">
             <caption>On Click</caption>
             <category>Behavior</category>
