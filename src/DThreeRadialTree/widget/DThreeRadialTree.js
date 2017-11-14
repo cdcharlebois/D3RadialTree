@@ -163,7 +163,7 @@ define([
             var labelSize = 10;
             var textDistancePositive = 10;
             var textDistanceNegitive = -10;
-            var treeSize = 880;
+            var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 3));
             var toolTipSize = '10px';
             var nodeSize = 16;
             var selectedNode;
@@ -234,6 +234,18 @@ define([
                 .attr('fill', nodeColor)
                 .attr('stroke', (d) => { return '#000000' })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
+            
+            node.append("text")
+                .attr("dy", "0.31em")
+                .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
+                .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
+                .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
+                //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
+                .text(function(d) { return d.data['fullName'] })
+                //.attr('visibility', 'hidden')
+                .style('font-size', (d) => { return labelSize;})
+                .attr('fill', '#000000')
+                .exit().remove();
 
             function nodeColor(d) {
                 switch (d.data['Message']) {
@@ -441,7 +453,7 @@ define([
 
         /**
          * Set CEO as Root
-         * ---
+         * --- 
          * @param {Array::MxObject} mxObjects - Array of Objects, with one CEO to set as root.
          * @todo Error Handling - if more than one CEO
          */
