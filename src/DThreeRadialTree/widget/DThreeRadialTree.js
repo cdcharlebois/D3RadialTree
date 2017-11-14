@@ -38,7 +38,10 @@ define([
         enumAttr: null,
         enumImageMapping: null,
         nodeSize: null,
-
+        nodeLabelAttr: null,
+        nodeShowLabelAttr: null,
+        nodeFocusAttr: null,
+        nodeFocusClass: null,
         // behavior
         onClickMicroflow: null,
         editForm: null,
@@ -164,8 +167,8 @@ define([
             var imageSize = this.nodeSize;
             var nodeRadius = 4;
             var labelSize = 10;
-            var textDistancePositive = this.nodeSize;
-            var textDistanceNegitive = this.nodeSize * -1;
+            var textDistancePositive = Math.floor(this.nodeSize * 0.67);
+            var textDistanceNegitive = Math.floor(this.nodeSize * -0.67);
             var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 3));
             var toolTipSize = '10px';
             var nodeSize = 16;
@@ -185,9 +188,15 @@ define([
             var root = tree(stratify(__drawGraph));
 
             var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+<<<<<<< HEAD
             
 
 
+=======
+                .call(d3.zoom().on("zoom", function() {
+                    svg.attr("transform", d3.event.transform)
+                }))
+>>>>>>> 57d136af6a63334ecad017ce97dc53a800b11e34
 
             var toolTip = d3.select('body').append('div');
             toolTip.attr('id', 'tooltip')
@@ -216,7 +225,6 @@ define([
 
             var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
-
             var link = g.selectAll(".link")
                 .data(root.links())
                 .enter().append("path")
@@ -244,9 +252,8 @@ define([
                 //.attr('visibility', 'hidden')
                 .style('font-size', (d) => { return labelSize; })
                 .style('padding-left', '10px')
-                .attr('class', 'd3ChartLabel')
+                .attr('class', function(d) { return "d3ChartLabel " + (d.data["focus"] || "") })
                 .attr('fill', '#000000')
-                
 
             node.append("image")
                 .attr("xlink:href", function(d) {
@@ -379,11 +386,12 @@ define([
             return mxObjects.map(lang.hitch(this, function(mxobj) {
                 return {
                     "email": mxobj.get(this.primaryKeyAttr),
-                    "fullName": mxobj.get("FullName"),
+                    "fullName": !this.nodeShowLabelAttr || mxobj.get(this.nodeShowLabelAttr) ? mxobj.get(this.nodeLabelAttr) : "",
                     "manager": mxobj.get(this.foreignKeyAttr),
                     "icon": this._getImageUrl(mxobj.get(this.enumAttr)),
                     "orgLayer": mxobj.get(this.orgLayerRankAttr),
-                    "guid": mxobj.getGuid()
+                    "guid": mxobj.getGuid(),
+                    "focus": this.nodeFocusAttr && mxobj.get(this.nodeFocusAttr) ? this.nodeFocusClass : null
                 }
             }));
             // }));
