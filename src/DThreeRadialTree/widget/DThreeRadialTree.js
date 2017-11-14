@@ -129,7 +129,7 @@ define([
                     this._finishUpdate(callback);
                 }))
                 .catch(lang.hitch(this, function(err) {
-                    console.error("ERROR OCCURRED: " + this._errorState || err.message);
+                    console.error("ERROR OCCURRED: " + (this._errorState || err.message));
                     this._finishUpdate(callback);
                 }));
         },
@@ -233,8 +233,6 @@ define([
                 .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
                 .attr('cursor', 'pointer')
-                .on('click', lang.hitch(theWidget, this._onNodeClick))
-            
             node.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
@@ -248,19 +246,14 @@ define([
                 .attr('fill', '#000000')
                 
 
-            
-                node.append("image")
-                .attr("xlink:href", function(d){
+            node.append("image")
+                .attr("xlink:href", function(d) {
                     return d.data.icon;
                 })
                 .attr('width', imageSize)
                 .attr('height', imageSize)
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
-                
-        
-``
-
-               
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
 
             function nodeColor(d) {
                 switch (d.data['Message']) {
@@ -330,6 +323,9 @@ define([
                             reject();
                         } else {
                             var chartObjs = this._mapToChartObjects(includedNodes);
+                            if (this._phantomRoot) {
+                                chartObjs.unshift(this._phantomRoot);
+                            }
                             resolve(chartObjs);
                         }
                     }))
@@ -438,7 +434,7 @@ define([
                     return (parentObj.get(this.orgLayerRankAttr) * 1 === mxObj.get(this.orgLayerRankAttr) * 1 - 1) &&
                         parentObj.get(this.primaryKeyAttr) === mxObj.get(this.foreignKeyAttr)
                 }))
-                if (parent || mxObj.get(this.orgLayerRankAttr) * 1 === 0) {
+                if (parent || mxObj.get(this.orgLayerRankAttr) * 1 === 0 || (this._phantomRoot && mxObj.get(this.foreignKeyAttr) == "root")) {
                     include.push(mxObj);
                 } else {
                     this._logExclusionMessage(mxObj, "could not find a parent with [" + this.primaryKeyAttr + "=" + mxObj.get(this.foreignKeyAttr) + "]")
@@ -471,19 +467,43 @@ define([
          * --- 
          * @param {Array::MxObject} mxObjects - Array of Objects, with one CEO to set as root.
          * @todo Error Handling - if more than one CEO
+         * - The "CEO" is the object with the lowest value in org rank
+         * - If there is more than one object with the lowest rank, then we need to add a "phantom" CEO
          */
         _setCEOAsRoot: function(mxObjects) {
-            // 1. Set the CEO to not have a manager
-            var ceo = mxObjects.find(lang.hitch(this, function(mxobj) {
-                return mxobj.get("CEO")
+            // 1. find the lowest orglayerrank
+            var minRank = Math.min.apply(null, mxObjects.map(lang.hitch(this, function(mxobj) {
+                return (mxobj.get(this.orgLayerRankAttr) ? mxobj.get(this.orgLayerRankAttr) * 1 : 999999);
+            })));
+            // 2. Get all the mxObjects with that rank
+            var lowestList = mxObjects.filter(lang.hitch(this, function(mxobj) {
+                return mxobj.get(this.orgLayerRankAttr) && mxobj.get(this.orgLayerRankAttr) * 1 === minRank;
             }));
-            if (ceo) {
-                ceo.set(this.foreignKeyAttr, "");
-            } else {
+            // 3a. if there's none, there's an error
+            if (!lowestList) {
                 this._errorState = "No CEO"
                 console.error(">>>>> No CEO found in the dataset. The chart will fail.")
             }
-
+            // 3b. If there's only one, it's the CEO
+            else if (lowestList.length === 1) {
+                this._phantomRoot = null;
+                lowestList[0].set(this.foreignKeyAttr, "");
+            }
+            // 3c. If there's more than one, we need to add a phantom
+            else {
+                // add the root as the first object
+                this._phantomRoot = {
+                    "email": "root",
+                    "fullName": "Company",
+                    "manager": "",
+                    "icon": "",
+                    "orgLayer": minRank - 1,
+                    "guid": ""
+                };
+                lowestList.forEach(lang.hitch(this, function(mxobj) {
+                    mxobj.set(this.foreignKeyAttr, "root");
+                }));
+            }
         },
 
         /**
