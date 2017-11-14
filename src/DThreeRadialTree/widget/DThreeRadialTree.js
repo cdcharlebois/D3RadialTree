@@ -41,6 +41,7 @@ define([
         _handles: null,
         _contextObj: null,
         _totalErrors: {},
+        _errorState: null,
 
         //dummy 
         __jsonTestData: [{
@@ -82,15 +83,52 @@ define([
 
         update: function(obj, callback) {
             logger.debug(this.id + ".update");
+            this._errorState = null;
             this._contextObj = obj;
+            this._gatherDataAndDrawGraph(callback);
+            // this.__drawGraph(this.__jsonTestData);
+
+        },
+
+        _gatherDataAndDrawGraph: function(callback) {
             this._gatherData()
                 .then(lang.hitch(this, function(data) {
                     this.__drawGraph(data);
-                    this._updateRendering(callback);
+                    console.debug("===== EXCLUSION SUMMARY =====");
+                    var total = 0;
+                    for (var key in this._totalErrors) {
+                        console.debug("" + this._totalErrors[key] + " total exclusions because --> " + key);
+                        total += this._totalErrors[key];
+                    }
+                    console.debug("== Total: " + total + " exclusions ==");
+                    this._finishUpdate(callback);
+                }))
+                .catch(lang.hitch(this, function(err) {
+                    console.error("ERROR OCCURRED: " + this._errorState);
+                    this._finishUpdate(callback);
                 }));
+        },
 
-            // this.__drawGraph(this.__jsonTestData);
+        /**
+         * On Finally
+         */
+        _finishUpdate: function(callback) {
+            this._resetSubscriptions();
+            this._updateRendering(callback);
+        },
 
+        /**
+         * Reset Subscriptions
+         * ---
+         * Subscribe to the Context object for changes
+         */
+        _resetSubscriptions: function() {
+            this.subscribe({
+                guid: this._contextObj.getGuid(),
+                callback: lang.hitch(this, function(guid) {
+                    this._gatherDataAndDrawGraph();
+                })
+            });
         },
 
         __drawGraph: function(__drawGraph) {
@@ -246,9 +284,13 @@ define([
                 // 1. Fetch the entities to be used as the nodes
                 this._featchEntitiesFromMicroflow()
                     .then(lang.hitch(this, function(mxObjects) {
-                        var includedNodes = this._cleanUpData(mxObjects),
-                            chartObjs = this._mapToChartObjects(includedNodes);
-                        resolve(chartObjs)
+                        var includedNodes = this._cleanUpData(mxObjects);
+                        if (this._errorState) {
+                            reject();
+                        } else {
+                            var chartObjs = this._mapToChartObjects(includedNodes);
+                            resolve(chartObjs);
+                        }
                     }))
             }));
         },
@@ -256,6 +298,9 @@ define([
         _cleanUpData: function(mxObjects) {
             // return new Promise(lang.hitch(this, function(resolve) {
             this._setCEOAsRoot(mxObjects);
+            if (this._errorState) {
+                return;
+            }
             var sortedMxObjects = this._sortMxObjects(mxObjects, this.orgLayerRankAttr),
                 include = this._getValidMxObjects(sortedMxObjects);
             return (include);
@@ -392,7 +437,13 @@ define([
             var ceo = mxObjects.find(lang.hitch(this, function(mxobj) {
                 return mxobj.get("CEO")
             }));
-            ceo.set(this.foreignKeyAttr, "");
+            if (ceo) {
+                ceo.set(this.foreignKeyAttr, "");
+            } else {
+                this._errorState = "No CEO"
+                console.error(">>>>> No CEO found in the dataset. The chart will fail.")
+            }
+
         },
 
         /**
@@ -423,13 +474,6 @@ define([
         },
 
         _updateRendering: function(callback) {
-            console.error("===== EXCLUSION SUMMARY =====");
-            var total = 0;
-            for (var key in this._totalErrors) {
-                console.error("" + this._totalErrors[key] + " total exclusions because --> " + key);
-                total += this._totalErrors[key];
-            }
-            console.error("== Total: " + total + " exclusions ==");
             logger.debug(this.id + "._updateRendering");
 
             if (this._contextObj !== null) {
