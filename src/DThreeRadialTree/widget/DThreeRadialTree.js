@@ -86,6 +86,7 @@ define([
                     this._updateRendering(callback);
                 }));
 
+
             // this.__drawGraph(this.__jsonTestData);
 
         },
@@ -100,7 +101,7 @@ define([
             var labelSize = 10;
             var textDistancePositive = 10;
             var textDistanceNegitive = -10;
-            var treeSize = 680;
+            var treeSize = 880;
             var toolTipSize = '10px';
             var nodeSize = 16;
             var selectedNode;
@@ -114,116 +115,87 @@ define([
                 .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
 
             var stratify = d3.stratify()
-                .parentId((d) => { return d['manager'] })
-                .id((d) => { return d['email'] })
+                .parentId(function(d){ return d['manager'] })
+                .id(function(d){ return d['email'] })
 
-            var root = tree(stratify(__drawGraph));
-
-            var svg = d3.select(this.domNode).append('svg').attr('width', width).attr('height', height)
-            var toolTip = d3.select('body').append('div');
-            toolTip.attr('id', 'tooltip')
-
-            var defs = svg.append("defs");
-            var filter = defs.append("filter")
+                var root = tree(stratify(__drawGraph));
+                
+                var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+                var toolTip = d3.select('body').append('div');
+                    toolTip.attr('id', 'tooltip')
+    
+                var defs = svg.append("defs");
+                var filter = defs.append("filter")
                 .attr("id", "drop-shadow")
                 .attr("height", "130%");
-
-            filter.append("feGaussianBlur")
+    
+                filter.append("feGaussianBlur")
                 .attr("in", "SourceAlpha")
                 .attr("stdDeviation", 2)
                 .attr("result", "blur");
-
-            filter.append("feOffset")
+    
+                filter.append("feOffset")
                 .attr("in", "blur")
                 .attr("dx", 1)
                 .attr("dy", 2)
                 .attr("result", "offsetBlur");
-
-            var feMerge = filter.append("feMerge");
-            feMerge.append("feMergeNode")
+    
+                var feMerge = filter.append("feMerge");
+                feMerge.append("feMergeNode")
                 .attr("in", "offsetBlur")
-            feMerge.append("feMergeNode")
+                feMerge.append("feMergeNode")
                 .attr("in", "SourceGraphic");
-
-            // width = +svg.attr("width"),
-            // height = +svg.attr("height"),
-            // g = svg.append("g").attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
-            var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
-
+                    
+                // width = +svg.attr("width"),
+                // height = +svg.attr("height"),
+                // g = svg.append("g").attr("transform", "translate(" + (width / 2 + 40) + "," + (height / 2 + 90) + ")");
+                var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
+    
+        
+          
             var link = g.selectAll(".link")
-                .remove().exit()
                 .data(root.links())
                 .enter().append("path")
                 .attr("class", "link")
                 .attr("d", d3.linkRadial()
                 .angle(function(d) { return d.x; })
                 .radius(function(d) { return d.y; }));
-
+            
+                
+                
+    
             var node = g.selectAll(".node")
                 .data(root.descendants())
                 .enter().append("g")
-                .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-                .attr('cursor', 'pointer');
+                    .attr("class", function(d) {  return "node" + (d.children ? " node--internal" : " node--leaf"); })
+                    .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+                    .attr('cursor', 'pointer');
+                    node.append("circle")
+                    .attr("r", (d) => {              
+                      return nodeRadius;
+                    })
+                    .attr('fill', nodeColor)
+                    .attr('stroke', (d) => { return '#000000'})
+                    .on('click', nodeInfo)
 
-            node.append("circle")
-                .attr("r", (d) => {
-                    return nodeRadius;
-                })
-                .attr('fill', nodeColor)
-                .attr('stroke', (d) => { return '#000000' })
-                .attr("x", (d) => {
-                    if (d.data['Message'] !== '') {
-                        return -12;
-                    } else {
-                        return -8;
+        
+                    function nodeColor(d){              
+                        switch(d.data['Message']){
+                          case 'Do not participate': return '#D8D8D8';
+                            break;
+                          case 'Warning':  return '#E87408';
+                            break;
+                          default:
+                              return '#000000';                     
+                        }
+                        if (d.data['Message']){                         
+                          return '#FADF0A';
+                        } 
                     }
 
-                })
-                .attr("y", (d) => {
-                    if (d.data['Message'] !== '') {
-                        return -12;
-                    } else {
-                        return -8;
-                    }
-                })
-                .attr("width", nodeSize)
-                .attr("height", nodeSize)
-                .on('click', nodeInfo)
-
-            node.append("text")
-                .attr("dy", "0.31em")
-                .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
-                .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
-                .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
-                //.text(function(d) { return d.id.substring(d.id.lastIndexOf(".") + 1); });
-                .text(function(d) { return d.data['Full Name'] })
-                .attr('visibility', 'hidden')
-                .style('font-size', (d) => { return labelSize; })
-                //.attr('fill', '#000000')
-                .exit().remove();
-
-            function radialPoint(x, y) {
-                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
-            }
-
-            function nodeColor(d) {
-
-                switch (d.data['message']) {
-                    case 'Do not participate':
-                        return '#D8D8D8';
-                        break;
-                    case 'Warning':
-                        return '#E87408';
-                        break;
-                    default:
-                        return '#000000';
-                }
-                if (d.data['message']) {
-                    return '#FADF0A';
-                }
-            }
-
+        function radialPoint(x, y) {
+            return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
+            }        
             //get data from node
             function nodeInfo(d){
                 if(d.data !== null){
