@@ -173,17 +173,16 @@ define([
 
             // cache svg node
             this._svgNode = this._svgNode || d3.select(this.domNode).append("svg")
-            var svg = this._svgNode.attr('width', width).attr('height', height)
-                // cache g node
+            var svg = this._svgNode.attr('width', width).attr('height', height);
+            // cache g node
             this._gNode = this._gNode || svg.append("g");
-            // transform the g node into the middle of the svg element
-            var existingTransform = d3.zoomTransform(this._gNode);
-            var newTransform = existingTransform.translate(width / 2, height / 2).scale(1);
-            this._gNode.attr("transform", newTransform);
             var g = this._gNode;
 
-            // attach the zoom listener
+            // attach the zoom listener and move to center
             svg.call(zoom);
+            svg.call(zoom.translateTo, 0, 0);
+            // svg.call(zoom.translateBy, width / 4, height / 4);
+            // not sure why both of these lines are equivalent
 
             // this function is called when the svg is moved, and it repositions the group
             function zoomed() {
