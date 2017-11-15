@@ -54,36 +54,6 @@ define([
         _imageHelper: null,
         _scaleFactor: 1,
 
-        //dummy 
-        __jsonTestData: [{
-                "email": "company.com",
-                "fullName": "company.com",
-                "isCEO": true,
-                "manager": "",
-                "icon": "ok"
-            }, {
-                "email": "andreas.schultz@company.com",
-                "fullName": "Andreas Schultz",
-                "isCEO": true,
-                "manager": "company.com",
-                "icon": "ok"
-            },
-            {
-                "email": "albert.li@company.com",
-                "fullName": "Albert Li",
-                "isCEO": false,
-                "manager": "andreas.schultz@company.com",
-                "icon": "ok"
-            },
-            {
-                "email": "amy.jones@company.com",
-                "fullName": "Amy Jones",
-                "isCEO": false,
-                "manager": "andreas.schultz@company.com",
-                "icon": "ok"
-            }
-        ],
-
         constructor: function() {
             this._handles = [];
             this._totalErrors = {};
@@ -104,8 +74,6 @@ define([
             this._errorState = null;
             this._contextObj = obj;
             this._gatherDataAndDrawGraph(callback);
-            // this.__drawGraph(this.__jsonTestData);
-
         },
 
         /**
@@ -119,6 +87,14 @@ define([
             return this._imageHelper[key];
         },
 
+        /**
+         * Gather Data and Graw Draph
+         * ---
+         * Where the magic happens
+         * 1. Gather Data
+         * 2. Draw the graph
+         * 3. Finish the update (subscriptions and callback)
+         */
         _gatherDataAndDrawGraph: function(callback) {
             this._totalErrors = {}; //reset
             this._gatherData()
@@ -165,7 +141,7 @@ define([
 
         __drawGraph: function() {
             var __drawGraph = this._treeNodes;
-            this.domNode.innerHTML = "";
+            // this.domNode.innerHTML = "";
             var theWidget = this;
 
             var imageSize = this.nodeSize;
@@ -178,11 +154,12 @@ define([
             var nodeSize = 16;
             var active = d3.select(null);
             var zoom = d3.zoom()
-                .scaleExtent([1, 8])
-                .on("zoom", zoomed);
+                .scaleExtent([0.5, 8])
+                .on("zoom", lang.hitch(this, zoomed));
 
             var width = this.domNode.getBoundingClientRect().width,
                 height = width;
+            this._radius = width / 2;
 
             var tree = d3.tree()
                 .size([2 * Math.PI, treeSize])
@@ -193,44 +170,101 @@ define([
                 .id(function(d) { return d['email'] })
 
             var root = tree(stratify(__drawGraph));
-            // cache svg node
-            // this._svgNode = this._svgNode || d3.select(this.domNode).append("svg")
-            this._svgNode = d3.select(this.domNode).append("svg")
-            var svg = this._svgNode.attr('width', width).attr('height', height)
-            svg.call(zoom);
-            // this._gNode = this._gNode || svg.append("g")
-            this._gNode = svg.append("g")
-            var g = this._gNode.attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
+            // cache svg node
+            this._svgNode = this._svgNode || d3.select(this.domNode).append("svg")
+            var svg = this._svgNode.attr('width', width).attr('height', height)
+                // cache g node
+            this._gNode = this._gNode || svg.append("g");
+            // transform the g node into the middle of the svg element
+            var existingTransform = d3.zoomTransform(this._gNode);
+            var newTransform = existingTransform.translate(width / 2, height / 2).scale(1);
+            this._gNode.attr("transform", newTransform);
+            var g = this._gNode;
+
+            // attach the zoom listener
+            svg.call(zoom);
+
+            // this function is called when the svg is moved, and it repositions the group
             function zoomed() {
-                g.attr("transform", d3.event.transform); // updated for d3 v4
+                this._gNode.attr("transform", d3.event.transform); // updated for d3 v4
             };
 
-            // this._ExitAllNodes(g.selectAll(".node"));
-
+            // D3 LIFECYCLE HERE
+            /**
+             * LINKS
+             */
+            //update
             var link = g.selectAll(".link")
                 .data(root.links())
-                .enter().append("path")
+
+            link.transition()
+                .duration(750)
+                .ease(d3.easeCubicInOut)
+                .style("stroke-opacity", "0.4")
+                .attr("d", d3.linkRadial()
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
+
+            //enter
+            link.enter()
+                .append("path")
                 .attr("class", "link")
                 .style("stroke", "#555")
-                .style("stroke-opacity", "0")
+                .style("stroke-opacity", "0.0")
                 .style("stroke-width", "1.5px")
                 .style("fill", "none")
-            this._linkTransition(link);
+                .attr("d", d3.linkRadial()
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
 
+            link.enter().selectAll("path.link").transition()
+                .duration(750)
+                .ease(d3.easeCubicInOut)
+                .style("stroke-opacity", "0.4")
+                .attr("d", d3.linkRadial()
+                    .angle(function(d) { return d.x; })
+                    .radius(function(d) { return d.y; }));
+            //exit
+            link.exit().remove();
+
+            /**
+             * NODES
+             */
             var node = g.selectAll(".node")
-                .data(root.descendants())
-                .enter().append("g")
-                .attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
-                // .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-                .attr('cursor', 'pointer')
+                .data(root.descendants());
+
+            // helpers
             var radialPoint = function radialPoint(x, y) {
-                // y /= 2;
                 return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             };
-            this._nodeTransition(node, radialPoint);
 
-            node.append("text")
+            //update
+            node.transition()
+                .duration(750).ease(d3.easeCubicInOut)
+                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+            node.select("text").transition()
+                .duration(750).ease(d3.easeCubicInOut)
+                .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
+                .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
+                .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
+                .text(function(d) { return d.data['fullName'] })
+                .attr('class', function(d) { return "d3ChartLabel " + (d.data["focus"] || "") })
+            node.select("image").transition()
+                .duration(750).ease(d3.easeCubicInOut)
+                .attr("xlink:href", function(d) {
+                    return d.data.icon;
+                })
+            node.raise();
+
+            //enter
+            var g = node.enter()
+                .append("g");
+            g.attr("class", function(d) { return "node" + (d.children ? " node--internal" : " node--leaf"); })
+                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
+                .attr('cursor', 'pointer')
+                .attr("id", function(d) { return d.data.guid; });
+            g.append("text")
                 .attr("dy", "0.31em")
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
                 .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
@@ -240,32 +274,19 @@ define([
                 .style('font-size', (d) => { return labelSize; })
                 .style('padding-left', '10px')
                 .attr('class', function(d) { return "d3ChartLabel " + (d.data["focus"] || "") })
-                .attr('fill', '#000000')
-
-            node.append("image")
+                .attr('fill', '#000000');
+            g.append("image")
                 .attr("xlink:href", function(d) {
                     return d.data.icon;
                 })
                 .attr('width', imageSize)
                 .attr('height', imageSize)
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
-                .on('click', lang.hitch(theWidget, this._onNodeClick))
+                .on('click', lang.hitch(theWidget, this._onNodeClick));
 
-        },
+            //exit
+            node.exit().remove();
 
-        _nodeTransition: function(node, radialPoint) {
-            var nodeTransition = node.transition().duration(1000).ease(d3.easeCubicInOut)
-                .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
-            nodeTransition.selectAll(".node");
-        },
-
-        _linkTransition: function(link) {
-            var linkTransition = link.transition().duration(1500).ease(d3.easeCubicInOut)
-                .style("stroke-opacity", "0.4")
-                .attr("d", d3.linkRadial()
-                    .angle(function(d) { return d.x; })
-                    .radius(function(d) { return d.y; }));
-            linkTransition.selectAll(".link");
         },
 
         /**
@@ -301,7 +322,7 @@ define([
         _gatherData: function() {
             return new Promise(lang.hitch(this, function(resolve, reject) {
                 // 1. Fetch the entities to be used as the nodes
-                this._featchEntitiesFromMicroflow()
+                this._fetchEntitiesFromMicroflow()
                     .then(lang.hitch(this, function(mxObjects) {
                         var includedNodes = this._cleanUpData(mxObjects);
                         if (this._errorState) {
@@ -317,8 +338,13 @@ define([
             }));
         },
 
+        /**
+         * Clean Up Data
+         * ---
+         * Set the CEO as root, sort, and remove orphan objects
+         * @returns {Array::MxObjects} - The MxObjects to be included in the chart
+         */
         _cleanUpData: function(mxObjects) {
-            // return new Promise(lang.hitch(this, function(resolve) {
             this._setCEOAsRoot(mxObjects);
             if (this._errorState) {
                 return;
@@ -326,7 +352,6 @@ define([
             var sortedMxObjects = this._sortMxObjects(mxObjects, this.orgLayerRankAttr),
                 include = this._getValidMxObjects(sortedMxObjects);
             return (include);
-            // }));
         },
 
         /**
@@ -349,8 +374,13 @@ define([
                 });
             }));
         },
-
-        _featchEntitiesFromMicroflow: function(mfName) {
+        /**
+         * Fetch Entities from Microflow
+         * ---
+         * Get the associate buffer objects from the specified microflow
+         * @returns {Promise} - resolves with a list of MxObjects
+         */
+        _fetchEntitiesFromMicroflow: function(mfName) {
             return new Promise(lang.hitch(this, function(resolve, reject) {
                 mx.data.action({
                     params: {
