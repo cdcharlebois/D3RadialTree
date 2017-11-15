@@ -193,36 +193,14 @@ define([
                 .id(function(d) { return d['email'] })
 
             var root = tree(stratify(__drawGraph));
-
-            var svg = d3.select(this.domNode).append("svg").attr('width', width).attr('height', height)
+            // cache svg node
+            // this._svgNode = this._svgNode || d3.select(this.domNode).append("svg")
+            this._svgNode = d3.select(this.domNode).append("svg")
+            var svg = this._svgNode.attr('width', width).attr('height', height)
             svg.call(zoom);
-
-            var toolTip = d3.select('body').append('div');
-            toolTip.attr('id', 'tooltip')
-
-            var defs = svg.append("defs");
-            var filter = defs.append("filter")
-                .attr("id", "drop-shadow")
-                .attr("height", "130%");
-
-            filter.append("feGaussianBlur")
-                .attr("in", "SourceAlpha")
-                .attr("stdDeviation", 2)
-                .attr("result", "blur");
-
-            filter.append("feOffset")
-                .attr("in", "blur")
-                .attr("dx", 1)
-                .attr("dy", 2)
-                .attr("result", "offsetBlur");
-
-            var feMerge = filter.append("feMerge");
-            feMerge.append("feMergeNode")
-                .attr("in", "offsetBlur")
-            feMerge.append("feMergeNode")
-                .attr("in", "SourceGraphic");
-
-            var g = svg.append("g").attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")")
+            // this._gNode = this._gNode || svg.append("g")
+            this._gNode = svg.append("g")
+            var g = this._gNode.attr("transform", "translate(" + (width / 2) + "," + (height / 2 + 5) + ")");
 
             function zoomed() {
                 g.attr("transform", d3.event.transform); // updated for d3 v4
@@ -238,7 +216,7 @@ define([
                 .style("stroke-opacity", "0")
                 .style("stroke-width", "1.5px")
                 .style("fill", "none")
-            this._linkEnterTransition(link);
+            this._linkTransition(link);
 
             var node = g.selectAll(".node")
                 .data(root.descendants())
@@ -250,7 +228,7 @@ define([
                 // y /= 2;
                 return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
             };
-            this._nodeEnterTransition(node, radialPoint);
+            this._nodeTransition(node, radialPoint);
 
             node.append("text")
                 .attr("dy", "0.31em")
@@ -273,20 +251,15 @@ define([
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
                 .on('click', lang.hitch(theWidget, this._onNodeClick))
 
-            function radialPoint(x, y) {
-                // y /= 2;
-                return [(y = +y) * Math.cos(x -= Math.PI / 2), y * Math.sin(x)];
-            }
-
         },
 
-        _nodeEnterTransition: function(node, radialPoint) {
+        _nodeTransition: function(node, radialPoint) {
             var nodeTransition = node.transition().duration(1000).ease(d3.easeCubicInOut)
                 .attr("transform", function(d) { return "translate(" + radialPoint(d.x, d.y) + ")"; })
             nodeTransition.selectAll(".node");
         },
 
-        _linkEnterTransition: function(link) {
+        _linkTransition: function(link) {
             var linkTransition = link.transition().duration(1500).ease(d3.easeCubicInOut)
                 .style("stroke-opacity", "0.4")
                 .attr("d", d3.linkRadial()
