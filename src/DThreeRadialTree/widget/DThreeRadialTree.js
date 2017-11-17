@@ -253,10 +253,10 @@ define([
             node.select("image").transition()
                 .duration(750).ease(d3.easeCubicInOut)
                 .attr("xlink:href", lang.hitch(theWidget, function(d) {
-                      if(this.rootNodeShowAttr === 'true' && d.data.orgLayer == '0'){
+                      if(this.rootNodeShowAttr === 'true' && String(d.data.fullName).toLowerCase === 'company' || String(d.data.fullName).toLowerCase === 'company.com' || String(d.data.email).toLowerCase === 'company.com'){
                          return '';
                          }else{
-                          return d.data.icon;;
+                           return d.data.icon;;
                       }                   
                   }))
             node.raise();

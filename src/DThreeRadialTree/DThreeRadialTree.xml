@@ -71,7 +71,7 @@
         <property key="rootNodeShowAttr" type="string" required="false" defaultValue="true">
             <caption>Hide Root Node</caption>
             <category>Appearance</category>
-            <description>Select the Root Node (CEO) True or False</description>
+            <description>Hide root node called 'Company' true or false</description>
         </property>        
         <property key="nodeFocusAttr" type="attribute" required="false" isPath="optional" pathType="reference" entityProperty="dataEntity">
             <caption>Node Focus Attr</caption>
