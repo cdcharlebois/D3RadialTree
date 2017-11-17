@@ -42,7 +42,6 @@ define([
         nodeShowLabelAttr: null,
         nodeFocusAttr: null,
         nodeFocusClass: null,
-        rootNodeShowAttr: null,
         // behavior
         onClickMicroflow: null,
         editForm: null,
@@ -248,16 +247,23 @@ define([
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
                 .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
                 .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
-                .text(function(d) { return d.data['fullName'] })
+                .text(function(d) { 
+                    if(d.data['fullName'] === 'Company'){
+                        return '';
+                    }else{
+                        return d.data['fullName'] 
+                    }
+                 })
                 .attr('class', function(d) { return "d3ChartLabel " + (d.data["focus"] || "") })
             node.select("image").transition()
                 .duration(750).ease(d3.easeCubicInOut)
                 .attr("xlink:href", lang.hitch(theWidget, function(d) {
-                      if(this.rootNodeShowAttr === 'true' && d.data.fullName === 'Company'){
-                         return '';
-                         }else{
-                           return d.data.icon;;
-                      }                   
+                    if(d.data['fullName' === 'Company']){
+                        return '';
+                    }else{
+                        return d.data.icon; 
+                    }
+                             
                   }))
             node.raise();
 
@@ -273,7 +279,14 @@ define([
                 .attr("x", function(d) { return d.x < Math.PI === !d.children ? textDistancePositive : textDistanceNegitive; })
                 .attr("text-anchor", function(d) { return d.x < Math.PI === !d.children ? "start" : "end"; })
                 .attr("transform", function(d) { return "rotate(" + (d.x < Math.PI ? d.x - Math.PI / 2 : d.x + Math.PI / 2) * 180 / Math.PI + ")"; })
-                .text(function(d) { return d.data['fullName'] })
+                .text(function(d) { 
+                   if(d.data['fullName'] === 'Company'){
+                       return '';
+                   }else{
+                       return d.data['fullName'] 
+                   }
+                   
+                })
                 //.attr('visibility', 'hidden')
                 .style('font-size', (d) => { return labelSize; })
                 .style('padding-left', '10px')
@@ -281,7 +294,12 @@ define([
                 .attr('fill', '#000000');
             g.append("image")
                 .attr("xlink:href", function(d) {
-                    return d.data.icon;
+                    if(d.data['fullName'] === 'Company'){
+                        return '';
+                    }else{
+                        return d.data.icon; 
+                    }
+                   
                 })
                 .attr('width', imageSize)
                 .attr('height', imageSize)
