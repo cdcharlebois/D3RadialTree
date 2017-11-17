@@ -42,6 +42,7 @@ define([
         nodeShowLabelAttr: null,
         nodeFocusAttr: null,
         nodeFocusClass: null,
+        rootNodeShowAttr: null,
         // behavior
         onClickMicroflow: null,
         editForm: null,
@@ -149,7 +150,7 @@ define([
             var labelSize = 10;
             var textDistancePositive = Math.floor(this.nodeSize * 0.67);
             var textDistanceNegitive = Math.floor(this.nodeSize * -0.67);
-            var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 3));
+            var treeSize = Math.floor((this.domNode.getBoundingClientRect().width / 2.5));
             var toolTipSize = '10px';
             var nodeSize = 16;
             var active = d3.select(null);
@@ -251,9 +252,13 @@ define([
                 .attr('class', function(d) { return "d3ChartLabel " + (d.data["focus"] || "") })
             node.select("image").transition()
                 .duration(750).ease(d3.easeCubicInOut)
-                .attr("xlink:href", function(d) {
-                    return d.data.icon;
-                })
+                .attr("xlink:href", lang.hitch(theWidget, function(d) {
+                      if(this.rootNodeShowAttr === 'true' && d.data.orgLayer == '0'){
+                         return '';
+                         }else{
+                          return d.data.icon;;
+                      }                   
+                  }))
             node.raise();
 
             //enter
