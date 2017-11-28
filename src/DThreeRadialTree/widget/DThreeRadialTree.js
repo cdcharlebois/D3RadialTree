@@ -209,7 +209,15 @@ define([
             link.enter()
                 .append("path")
                 .attr("class", "link")
-                .style("stroke", "#555")
+                .style("stroke", function(d){
+                    //console.log(d);
+                    if(d.source.id === 'root'){
+                        return "#ffffff"
+                    }else{
+                        return "#555";
+                    }
+                    
+                })
                 .style("stroke-opacity", "0.0")
                 .style("stroke-width", "1.5px")
                 .style("fill", "none")
@@ -259,10 +267,10 @@ define([
                 .duration(750).ease(d3.easeCubicInOut)
                 .attr("xlink:href", lang.hitch(theWidget, function(d) {
                     if(d.data['fullName' === 'Company']){
-                        return '';
-                    }else{
-                        return d.data.icon; 
-                    }
+                            return '';
+                        }else{
+                            return d.data.icon; 
+                        }
                              
                   }))
             node.raise();
@@ -304,11 +312,18 @@ define([
                 .attr('width', imageSize)
                 .attr('height', imageSize)
                 .attr("transform", function(d) { return "translate(" + (imageSize / -2) + "," + (imageSize / -2) + ")"; })
-                .on('click', lang.hitch(theWidget, this._onNodeClick));
-
+                .on('click', lang.hitch(theWidget, this._onNodeClick))
+                .on('mouseover', function(d){
+                console.log(d.id);
+                    if(d.id =='root'){
+                        //there is a bug in chrome and the cursor does not change on rollover
+                        document.body.style.cursor = "cursor: wait !important;";
+                    }
+                })  
+ 
             //exit
             node.exit().remove();
-
+ 
         },
 
         /**
@@ -317,7 +332,7 @@ define([
          */
         _onNodeClick: function(e) {
             // e.data.guid
-            if (this.onClickMicroflow) {
+            if (this.onClickMicroflow && e.id != 'root') {
                 mx.data.action({
                     params: {
                         actionname: this.onClickMicroflow,
